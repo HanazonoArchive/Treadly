@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'controllers/auth_controller.dart';
+import 'controllers/cart/cart_controller.dart';
 import 'controllers/profile/address_controller.dart';
+import 'controllers/search/search_controller.dart';
 import 'controllers/sync_controller.dart';
 import 'core/app_theme.dart';
 import 'core/backend_config.dart';
@@ -14,6 +16,8 @@ import 'core/supabase_config.dart';
 import 'views/auth/sign_in_view.dart';
 import 'views/auth/sign_up_view.dart';
 import 'views/home_view.dart';
+import 'views/product_view.dart';
+import 'views/search_input_view.dart';
 import 'views/settings_view.dart';
 import 'views/wallet_view.dart';
 
@@ -46,6 +50,8 @@ Future<void> main() async {
   Get.put(SyncController(), permanent: true);
   Get.put(AuthController(), permanent: true);
   Get.put(AddressController(), permanent: true);
+  Get.put(SearchCatalogController(), permanent: true);
+  Get.put(CartController(), permanent: true);
 
   runApp(DevicePreview(enabled: true, builder: (context) => const MyApp()));
 }
@@ -71,6 +77,8 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/settings', page: () => const SettingsView()),
         GetPage(name: '/sign-in', page: () => const SignInView()),
         GetPage(name: '/sign-up', page: () => const SignUpView()),
+        GetPage(name: '/product', page: () => const ProductView()),
+        GetPage(name: '/search-input', page: () => const SearchInputView()),
       ],
       unknownRoute: GetPage(name: '/notfound', page: () => HomeView()),
     );

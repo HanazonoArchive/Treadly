@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
+import '../models/tire.dart';
 
 /// FirebaseSyncService manages reading and writing data to Cloud Firestore.
 /// Ensures real-time mirroring and secondary/primary data persistence in Firebase.
@@ -12,6 +15,21 @@ class FirebaseSyncService {
   FirebaseFirestore get _db {
     _firestore ??= FirebaseFirestore.instance;
     return _firestore!;
+  }
+
+  /// Syncs or seeds a list of rich tires to Firestore `tires` collection
+  Future<void> syncTires(List<Tire> tires) async {
+    try {
+      for (final tire in tires) {
+        await _db
+            .collection('tires')
+            .doc(tire.id)
+            .set(tire.toJson(), SetOptions(merge: true));
+      }
+      debugPrint('[FirebaseSyncService] Synced ${tires.length} tires to Firestore.');
+    } catch (e) {
+      debugPrint('[FirebaseSyncService] Error syncing tires to Firestore: $e');
+    }
   }
 
   /// Syncs wallet balance, points, and voucher count to Firestore `user_wallets`
@@ -137,63 +155,18 @@ class FirebaseSyncService {
   /// (tires, users, user_wallets, vouchers, user_vouchers, orders, order_items, user_addresses)
   Future<String?> testPushLiveDemoData() async {
     try {
-      // 1. tires collection (Treadly Tire Catalog)
-      final sampleTires = [
-        {
-          'id': 'michelin-ps5-225-45-18',
-          'brand': 'Michelin',
-          'model': 'Pilot Sport 5',
-          'size': '225/45 R18',
-          'width': 225,
-          'aspect_ratio': 45,
-          'rim_size': 18,
-          'category': 'Summer',
-          'price': 219.99,
-          'is_whitelisted': true,
-        },
-        {
-          'id': 'continental-dws06-225-45-17',
-          'brand': 'Continental',
-          'model': 'ExtremeContact DWS06 Plus',
-          'size': '225/45 R17',
-          'width': 225,
-          'aspect_ratio': 45,
-          'rim_size': 17,
-          'category': 'All-Season',
-          'price': 184.99,
-          'is_whitelisted': true,
-        },
-        {
-          'id': 'pirelli-pzero-235-35-19',
-          'brand': 'Pirelli',
-          'model': 'P Zero PZ4',
-          'size': '235/35 R19',
-          'width': 235,
-          'aspect_ratio': 35,
-          'rim_size': 19,
-          'category': 'Summer',
-          'price': 269.99,
-          'is_whitelisted': true,
-        },
-        {
-          'id': 'bridgestone-re71rs-255-40-18',
-          'brand': 'Bridgestone',
-          'model': 'Potenza RE-71RS',
-          'size': '255/40 R18',
-          'width': 255,
-          'aspect_ratio': 40,
-          'rim_size': 18,
-          'category': 'Track / Summer',
-          'price': 295.00,
-          'is_whitelisted': true,
-        },
-      ];
-
-      for (final tire in sampleTires) {
-        await _db
-            .collection('tires')
-            .doc(tire['id'] as String)
-            .set(tire, SetOptions(merge: true));
+      // 1. tires collection (Treadly Tire Catalog with full 15 models and rich schema)
+      try {
+        final jsonString = await rootBundle.loadString('assets/data/tires.json');
+        final catalogTires = Tire.fromJsonList(jsonString);
+        for (final tire in catalogTires) {
+          await _db
+              .collection('tires')
+              .doc(tire.id)
+              .set(tire.toJson(), SetOptions(merge: true));
+        }
+      } catch (e) {
+        debugPrint('[FirebaseSyncService] Catalog load note: $e');
       }
 
       // 2. users collection (Driver Profiles)
@@ -290,13 +263,65 @@ class FirebaseSyncService {
         'updated_at': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
+      // 9. cart collection (Active Cart for demo_driver)
+      await _db
+          .collection('users')
+          .doc('demo_driver')
+          .collection('cart')
+          .doc('michelin-pilot-sport-5_false')
+          .set({
+        'tire_id': 'michelin-pilot-sport-5',
+        'quantity': 2,
+        'is_set_of_four': false,
+        'updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
       debugPrint(
-        '[FirebaseSyncService] Successfully pushed all 8 collections to Firestore!',
+        '[FirebaseSyncService] Successfully pushed all 9 collections/subcollections to Firestore!',
       );
       return null;
     } catch (e) {
       debugPrint('[FirebaseSyncService] Error pushing demo data: $e');
       return e.toString();
+    }
+  }
+
+  /// Syncs user's active cart to Firestore
+  Future<void> syncCart(String userId, List<Map<String, dynamic>> cartMaps) async {
+    if (userId.isEmpty) return;
+    try {
+      final cartCollection = _db.collection('users').doc(userId).collection('cart');
+      final currentDocs = await cartCollection.get();
+      final batch = _db.batch();
+
+      for (final doc in currentDocs.docs) {
+        batch.delete(doc.reference);
+      }
+
+      for (final item in cartMaps) {
+        final docRef = cartCollection.doc('${item['tire_id']}_${item['is_set_of_four']}');
+        batch.set(docRef, {
+          ...item,
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      debugPrint('[FirebaseSyncService] Synced ${cartMaps.length} cart items to Firestore for $userId');
+    } catch (e) {
+      debugPrint('[FirebaseSyncService] Note syncing cart to Firestore: $e');
+    }
+  }
+
+  /// Retrieves user's active cart from Firestore
+  Future<List<Map<String, dynamic>>> getCart(String userId) async {
+    if (userId.isEmpty) return [];
+    try {
+      final snap = await _db.collection('users').doc(userId).collection('cart').get();
+      return snap.docs.map((d) => d.data()).toList();
+    } catch (e) {
+      debugPrint('[FirebaseSyncService] Note reading cart from Firestore: $e');
+      return [];
     }
   }
 }

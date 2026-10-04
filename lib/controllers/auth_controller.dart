@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_theme.dart';
 import '../core/backend_config.dart';
 import '../services/firebase_sync_service.dart';
+import 'cart/cart_controller.dart';
 import 'sync_controller.dart';
 
 /// AuthController manages user session state (Guest vs Authenticated).
@@ -41,9 +42,14 @@ class AuthController extends GetxController {
     avatarUrl.value = user.userMetadata?['avatar_url'] as String? ?? '';
     displayName.value = user.userMetadata?['name'] as String? ?? user.email?.split('@').first ?? 'Driver';
 
-    // Sync latest user wallet & vouchers from Supabase
+    // Sync latest user wallet & vouchers from Supabase & Firestore
     if (Get.isRegistered<SyncController>()) {
       Get.find<SyncController>().syncUserData(user.id);
+    }
+
+    // Sync active shopping cart from Supabase & Firestore
+    if (Get.isRegistered<CartController>()) {
+      Get.find<CartController>().syncWithUser(user.id);
     }
 
     // Mirror registered user profile into Firebase Firestore
@@ -171,6 +177,11 @@ class AuthController extends GetxController {
     // Reset local wallet, vouchers, and points back to 0!
     if (Get.isRegistered<SyncController>()) {
       Get.find<SyncController>().resetLocalData();
+    }
+
+    // Reset shopping cart for guest session
+    if (Get.isRegistered<CartController>()) {
+      Get.find<CartController>().clearCart();
     }
 
     Get.snackbar(

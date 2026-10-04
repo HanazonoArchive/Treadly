@@ -69,7 +69,7 @@ class SettingsView extends StatelessWidget {
             icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.textPrimary, size: 24),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () => NavigationService.goBackOrHome(context, targetTab: 4),
+            onPressed: () => NavigationService.goBackOrHome(context, targetTab: 3),
           ),
           const SizedBox(width: 14),
           const Text(

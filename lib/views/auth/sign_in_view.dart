@@ -48,7 +48,7 @@ class _SignInViewState extends State<SignInView> {
     final success = await auth.signIn(email: email, password: password);
     if (success) {
       if (Get.isRegistered<NavigationController>()) {
-        Get.find<NavigationController>().changeTab(4);
+        Get.find<NavigationController>().changeTab(3);
       }
       Get.until((route) => route.isFirst);
     }
@@ -124,7 +124,7 @@ class _SignInViewState extends State<SignInView> {
             icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.textPrimary, size: 24),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () => NavigationService.goBackOrHome(context, targetTab: 4),
+            onPressed: () => NavigationService.goBackOrHome(context, targetTab: 3),
           ),
           const SizedBox(width: 14),
           const Text(

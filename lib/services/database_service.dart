@@ -2,17 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import '../models/tire.dart';
+
 /// DatabaseService manages Treadly's local SQLite database.
 /// Streamlined & Universal:
 /// - Universal Tire sizing (Width / Aspect Ratio / Rim Size).
-/// - No bloated vehicle junction tables or maintenance-heavy garage APIs.
+/// - Complete schema for live prices, stock, ratings, reviews, and specifications.
 /// - Fast local cache for tires, cart, wallet, and purchases.
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._internal();
   DatabaseService._internal();
 
   static const String _dbName = 'treadly.db';
-  static const int _dbVersion = 1;
+  static const int _dbVersion = 2;
 
   Database? _db;
 
@@ -39,26 +41,53 @@ class DatabaseService {
         await db.execute('PRAGMA foreign_keys = ON;');
       },
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
-    // 1. TIRES (Lean Universal Catalog & Local Cache)
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Upgrade tires table to include full real database attributes
+      await db.execute('DROP TABLE IF EXISTS tires;');
+      await _createTiresTable(db);
+    }
+  }
+
+  Future<void> _createTiresTable(Database db) async {
     await db.execute('''
       CREATE TABLE tires (
         id TEXT PRIMARY KEY,
         brand TEXT NOT NULL,
         model TEXT NOT NULL,
+        category TEXT NOT NULL,
+        season TEXT NOT NULL DEFAULT 'All-Season',
         size TEXT NOT NULL,
         width INTEGER NOT NULL,
         aspect_ratio INTEGER NOT NULL,
         rim_size INTEGER NOT NULL,
-        category TEXT NOT NULL,
+        load_index INTEGER,
+        speed_rating TEXT,
+        dot_year INTEGER,
         price REAL NOT NULL,
+        original_price REAL,
+        rating REAL NOT NULL DEFAULT 5.0,
+        reviews_count INTEGER NOT NULL DEFAULT 0,
+        stock INTEGER NOT NULL DEFAULT 0,
+        wet_grip TEXT,
+        fuel_efficiency TEXT,
+        noise_db INTEGER,
+        warranty_miles INTEGER,
+        description TEXT,
+        compatible_cars TEXT,
         image_asset TEXT,
         is_whitelisted INTEGER DEFAULT 1
       );
     ''');
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    // 1. TIRES (Lean Universal Catalog & Local Cache)
+    await _createTiresTable(db);
 
     // 2. USERS (Local Auth & Identity cache)
     await db.execute('''
@@ -161,6 +190,40 @@ class DatabaseService {
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       );
     ''');
+  }
+
+  /// Cache live tires into local SQLite database
+  Future<void> cacheTires(List<Tire> tires) async {
+    final db = await database;
+    if (db == null) return;
+    try {
+      final batch = db.batch();
+      batch.delete('tires'); // Clear any legacy duplicate entries
+      for (final tire in tires) {
+        batch.insert(
+          'tires',
+          tire.toSqliteMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
+      debugPrint('[DatabaseService] Cached ${tires.length} tires in SQLite');
+    } catch (e) {
+      debugPrint('[DatabaseService] Error caching tires in SQLite: $e');
+    }
+  }
+
+  /// Retrieve cached tires from local SQLite database
+  Future<List<Tire>> getCachedTires() async {
+    final db = await database;
+    if (db == null) return [];
+    try {
+      final List<Map<String, dynamic>> maps = await db.query('tires');
+      return maps.map((m) => Tire.fromSqliteMap(m)).toList();
+    } catch (e) {
+      debugPrint('[DatabaseService] Error querying tires from SQLite: $e');
+      return [];
+    }
   }
 
   /// Close the database connection
