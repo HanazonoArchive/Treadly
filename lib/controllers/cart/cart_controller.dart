@@ -342,6 +342,17 @@ class CartController extends GetxController {
             'item_count': purchasedItems.length,
             'created_at': FieldValue.serverTimestamp(),
           });
+          for (int i = 0; i < purchasedItems.length; i++) {
+            final item = purchasedItems[i];
+            await db.collection('order_items').doc('${orderId}_$i').set({
+              'id': '${orderId}_$i',
+              'order_id': orderId,
+              'tire_id': item.tire.id,
+              'quantity': item.actualTiresCount,
+              'price_at_purchase': item.unitPrice,
+              'created_at': FieldValue.serverTimestamp(),
+            });
+          }
         } catch (e) {
           debugPrint('[CartController] Firestore order insert note: $e');
         }

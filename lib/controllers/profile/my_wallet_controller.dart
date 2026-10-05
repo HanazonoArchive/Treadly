@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/backend_config.dart';
+import '../../services/firebase_sync_service.dart';
 import '../auth_controller.dart';
 import '../sync_controller.dart';
 
@@ -71,32 +73,65 @@ class MyWalletController extends GetxController {
   /// Shows the user's vouchers bottom sheet
   Future<void> _showVouchersModal() async {
     List<Map<String, dynamic>> userVouchers = [];
-    try {
-      final res = await Supabase.instance.client
-          .from('user_vouchers')
-          .select('id, is_available, vouchers(code, title, discount_amount, min_spend)')
-          .eq('user_id', auth.userId.value);
-      userVouchers = List<Map<String, dynamic>>.from(res as List);
-    } catch (e) {
-      debugPrint('[VouchersModal] Query user_vouchers note: $e');
+
+    // 1. Try Firebase first if Firebase is primary
+    if (BackendConfig.isFirebasePrimary) {
+      try {
+        userVouchers = await FirebaseSyncService.instance.getUserVouchers(auth.userId.value);
+      } catch (e) {
+        debugPrint('[VouchersModal] Firestore user vouchers note: $e');
+      }
+    }
+
+    // 2. Try Supabase if not yet found or Supabase is primary
+    if (userVouchers.isEmpty) {
+      try {
+        final res = await Supabase.instance.client
+            .from('user_vouchers')
+            .select('id, is_available, vouchers(code, title, discount_amount, min_spend)')
+            .eq('user_id', auth.userId.value);
+        userVouchers = List<Map<String, dynamic>>.from(res as List);
+      } catch (e) {
+        debugPrint('[VouchersModal] Query user_vouchers note: $e');
+      }
+    }
+
+    // 3. Fallback: try Firestore if Supabase was attempted first and empty
+    if (userVouchers.isEmpty && !BackendConfig.isFirebasePrimary) {
+      try {
+        userVouchers = await FirebaseSyncService.instance.getUserVouchers(auth.userId.value);
+      } catch (_) {}
     }
 
     // Fallback 1: Query global vouchers catalog if user-specific records are empty
     if (userVouchers.isEmpty) {
-      try {
-        final catalog = await Supabase.instance.client
-            .from('vouchers')
-            .select()
-            .eq('is_active', true);
-        for (final item in (catalog as List)) {
-          userVouchers.add({
-            'id': item['id'],
-            'is_available': true,
-            'vouchers': item,
-          });
+      if (BackendConfig.isFirebasePrimary) {
+        try {
+          final catalog = await FirebaseSyncService.instance.getCatalogVouchers();
+          for (final item in catalog) {
+            userVouchers.add({
+              'id': item['id'],
+              'is_available': true,
+              'vouchers': item,
+            });
+          }
+        } catch (_) {}
+      } else {
+        try {
+          final catalog = await Supabase.instance.client
+              .from('vouchers')
+              .select()
+              .eq('is_active', true);
+          for (final item in (catalog as List)) {
+            userVouchers.add({
+              'id': item['id'],
+              'is_available': true,
+              'vouchers': item,
+            });
+          }
+        } catch (e) {
+          debugPrint('[VouchersModal] Query vouchers catalog note: $e');
         }
-      } catch (e) {
-        debugPrint('[VouchersModal] Query vouchers catalog note: $e');
       }
     }
 
@@ -298,6 +333,9 @@ class MyWalletController extends GetxController {
     final earned = (checkoutTotal * 0.05).round();
     if (earned > 0) {
       pointsCount.value += earned;
+      if (Get.isRegistered<SyncController>() && auth.userId.value.isNotEmpty) {
+        Get.find<SyncController>().updateWalletBalance(auth.userId.value, rawBalance.value);
+      }
       Get.snackbar(
         'Points Earned!',
         'You earned +$earned points (5% back) on this purchase.',

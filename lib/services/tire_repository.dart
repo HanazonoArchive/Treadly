@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/backend_config.dart';
 import '../models/tire.dart';
 import 'database_service.dart';
+import 'firebase_sync_service.dart';
 
 /// TireRepository orchestrates Treadly's 3-Tier Database System:
 /// 1. Cloud Database (Live): Supabase (PostgreSQL) or Firebase Firestore
@@ -35,6 +36,11 @@ class TireRepository {
     // If cloud succeeded, cache to local SQLite for offline access
     if (tires.isNotEmpty) {
       DatabaseService.instance.cacheTires(tires);
+      // Auto-heal Firestore if Firebase is primary and Firestore was empty
+      if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
+        FirebaseSyncService.instance.cleanLegacyFirestoreTires();
+        FirebaseSyncService.instance.syncTires(tires);
+      }
       return tires;
     }
 
@@ -54,6 +60,12 @@ class TireRepository {
       final jsonString = await rootBundle.loadString('assets/data/tires.json');
       final fallbackList = Tire.fromJsonList(jsonString);
       debugPrint('[TireRepository] Loaded ${fallbackList.length} tires from bundled asset JSON.');
+      if (fallbackList.isNotEmpty) {
+        DatabaseService.instance.cacheTires(fallbackList);
+        if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
+          FirebaseSyncService.instance.syncTires(fallbackList);
+        }
+      }
       return fallbackList;
     } catch (e) {
       debugPrint('[TireRepository] Error loading fallback tires JSON: $e');
@@ -87,10 +99,15 @@ class TireRepository {
   /// Fetches tires from Firebase Firestore `tires` collection
   Future<List<Tire>> _fetchFromFirestore() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('tires')
-          .orderBy('rating', descending: true)
-          .get();
+      QuerySnapshot<Map<String, dynamic>> snapshot;
+      try {
+        snapshot = await FirebaseFirestore.instance
+            .collection('tires')
+            .orderBy('rating', descending: true)
+            .get();
+      } catch (_) {
+        snapshot = await FirebaseFirestore.instance.collection('tires').get();
+      }
 
       if (snapshot.docs.isNotEmpty) {
         final list = snapshot.docs.map((doc) {

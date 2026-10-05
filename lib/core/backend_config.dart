@@ -34,8 +34,9 @@ class BackendConfig {
   static const String _prefKeyPrimaryBackend = 'treadly_primary_cloud_backend';
   static const String _prefKeyMirrorSync = 'treadly_mirror_to_secondary';
 
-  /// The primary cloud database provider used for reads and primary writes
-  static final Rx<CloudBackend> primaryBackend = CloudBackend.supabase.obs;
+  /// The primary cloud database provider used for reads and primary writes.
+  /// Default set to Firebase since Firebase is the confirmed utilized cloud database.
+  static final Rx<CloudBackend> primaryBackend = CloudBackend.firebase.obs;
 
   /// When true, write operations mirror to both databases in real time
   static final RxBool mirrorToSecondary = true.obs;
@@ -52,11 +53,13 @@ class BackendConfig {
       final prefs = await SharedPreferences.getInstance();
       final savedBackend = prefs.getString(_prefKeyPrimaryBackend);
       if (savedBackend != null) {
-        if (savedBackend == 'firebase') {
-          primaryBackend.value = CloudBackend.firebase;
-        } else {
+        if (savedBackend == 'supabase') {
           primaryBackend.value = CloudBackend.supabase;
+        } else {
+          primaryBackend.value = CloudBackend.firebase;
         }
+      } else {
+        primaryBackend.value = CloudBackend.firebase;
       }
 
       final savedMirror = prefs.getBool(_prefKeyMirrorSync);
@@ -64,7 +67,8 @@ class BackendConfig {
         mirrorToSecondary.value = savedMirror;
       }
     } catch (_) {
-      // Graceful fallback to default Supabase if offline/storage fails
+      // Graceful fallback to default Firebase if offline/storage fails
+      primaryBackend.value = CloudBackend.firebase;
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../controllers/auth_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/app_theme.dart';
 import '../core/backend_config.dart';
@@ -456,24 +457,30 @@ class SettingsView extends StatelessWidget {
                     ),
                     icon: const Icon(LucideIcons.database, size: 16),
                     label: const Text(
-                      'Push Test Data to Firebase Console',
+                      'Push 1:1 Live Data to Firebase Console',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     onPressed: () async {
+                      final auth = Get.isRegistered<AuthController>() ? Get.find<AuthController>() : null;
+                      final uid = (auth != null && !auth.isGuest.value) ? auth.userId.value : null;
+
                       Get.snackbar(
-                        'Pushing Data...',
-                        'Writing demo documents to Firestore collections...',
+                        'Syncing to Firebase...',
+                        'Writing 1:1 live collections (tires, users, wallets, vouchers, orders, addresses, cart)...',
                         snackPosition: SnackPosition.BOTTOM,
                         backgroundColor: AppTheme.surfaceDark,
                         colorText: AppTheme.accentOrange,
                         margin: const EdgeInsets.all(16),
-                        duration: const Duration(seconds: 1),
+                        duration: const Duration(seconds: 2),
                       );
-                      final error = await FirebaseSyncService.instance.testPushLiveDemoData();
+
+                      final report = await FirebaseSyncService.instance.performFullMirrorSync(userId: uid);
+                      final error = report['error'] as String?;
+
                       if (error == null) {
                         Get.snackbar(
-                          'Firebase Synced Successfully!',
-                          'users, user_wallets, user_addresses, and vouchers collections created in Firestore. Refresh your Firebase Console!',
+                          'Firestore 1:1 Sync Completed!',
+                          'Synced: ${report['tires_synced']} tires, ${report['catalog_vouchers_synced']} vouchers, ${report['orders_synced']} orders, ${report['order_items_synced']} order items, and user profile/wallet/cart! Check your Firebase Console.',
                           snackPosition: SnackPosition.BOTTOM,
                           backgroundColor: AppTheme.surfaceDark,
                           colorText: Colors.white,

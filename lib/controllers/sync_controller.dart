@@ -5,10 +5,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/backend_config.dart';
 import '../services/firebase_sync_service.dart';
 import 'profile/address_controller.dart';
+import 'profile/my_purchase_controller.dart';
 import 'profile/my_wallet_controller.dart';
 
 /// SyncController synchronizes user data (wallet, vouchers, points)
-/// between Supabase and local reactive controllers.
+/// between Supabase, Firebase Firestore, and local reactive controllers.
 class SyncController extends GetxController {
   final RxBool isSyncing = false.obs;
 
@@ -40,13 +41,74 @@ class SyncController extends GetxController {
     },
   ];
 
-  /// Fetches the latest wallet balance and active vouchers count from Supabase.
+  /// Fetches the latest wallet balance and active vouchers count from primary backend.
   /// Self-heals: auto-seeds catalog vouchers and assigns them to the user if missing.
   Future<void> syncUserData(String userId) async {
     if (userId.isEmpty) return;
     isSyncing.value = true;
 
     try {
+      // A. FIREBASE PRIMARY PATH
+      if (BackendConfig.isFirebasePrimary) {
+        // 1. Fetch or create Firestore wallet
+        final fbWallet = await FirebaseSyncService.instance.getWallet(userId);
+        if (fbWallet != null) {
+          if (Get.isRegistered<MyWalletController>()) {
+            final walletCtrl = Get.find<MyWalletController>();
+            final num bal = fbWallet['balance'] ?? 0.0;
+            final num pts = fbWallet['points'] ?? fbWallet['points_count'] ?? 0;
+            walletCtrl.rawBalance.value = bal.toDouble();
+            walletCtrl.pointsCount.value = pts.toInt();
+          }
+        } else {
+          await FirebaseSyncService.instance.syncWallet(
+            userId: userId,
+            balance: 0.00,
+            points: 0,
+            vouchersCount: 3,
+          );
+        }
+
+        // 2. Ensure catalog vouchers exist in Firestore
+        await FirebaseSyncService.instance.seedCatalogVouchers(defaultVouchers);
+
+        // 3. Ensure user vouchers exist in Firestore
+        var fbVouchers = await FirebaseSyncService.instance.getUserVouchers(userId);
+        if (fbVouchers.isEmpty) {
+          await FirebaseSyncService.instance.assignUserVouchers(userId, defaultVouchers);
+          fbVouchers = await FirebaseSyncService.instance.getUserVouchers(userId);
+        }
+        if (Get.isRegistered<MyWalletController>()) {
+          final walletCtrl = Get.find<MyWalletController>();
+          final count = fbVouchers.where((v) => v['is_available'] == true).length;
+          walletCtrl.vouchersCount.value = count > 0 ? count : 3;
+        }
+
+        // 4. Saved delivery address
+        if (Get.isRegistered<AddressController>()) {
+          Get.find<AddressController>().fetchAddress(userId);
+        }
+
+        // 5. Purchases / Order counts
+        if (Get.isRegistered<MyPurchaseController>()) {
+          Get.find<MyPurchaseController>().loadOrderCounts(userId);
+        }
+
+        // 6. Dual-Sync mirror to Supabase if enabled
+        if (BackendConfig.mirrorToSecondary.value) {
+          try {
+            await Supabase.instance.client.from('user_wallets').upsert({
+              'user_id': userId,
+              'balance': fbWallet != null ? (fbWallet['balance'] ?? 0.0) : 0.00,
+              'points_count': fbWallet != null ? (fbWallet['points'] ?? 0) : 0,
+              'vouchers_count': 3,
+            });
+          } catch (_) {}
+        }
+        return;
+      }
+
+      // B. SUPABASE PRIMARY PATH (with Firestore Dual-Sync Mirror)
       final client = Supabase.instance.client;
 
       // 1. Fetch or create wallet
@@ -130,7 +192,12 @@ class SyncController extends GetxController {
         Get.find<AddressController>().fetchAddress(userId);
       }
 
-      // 6. Dual-Sync: Mirror wallet and catalog vouchers to Firebase Firestore
+      // 6. Purchases / Order counts
+      if (Get.isRegistered<MyPurchaseController>()) {
+        Get.find<MyPurchaseController>().loadOrderCounts(userId);
+      }
+
+      // 7. Dual-Sync: Mirror wallet and catalog vouchers to Firebase Firestore
       if (BackendConfig.mirrorToSecondary.value || BackendConfig.isFirebasePrimary) {
         final walletCtrl = Get.isRegistered<MyWalletController>()
             ? Get.find<MyWalletController>()
