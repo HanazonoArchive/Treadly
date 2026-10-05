@@ -328,7 +328,7 @@ INSERT INTO public.tires (
     'assets/images/tires/michelin_primacy_4_plus.webp', true
 ),
 (
-    'michelin-e-primacy', 'Michelin', 'e.Primacy Electric Drive', '235/40 R19',
+    'michelin-e-primacy', 'Michelin', 'e-Primacy Electric Drive', '235/40 R19',
     235, 40, 19, 'EV Energy Saving', 'Summer EV',
     209.99, 239.99, 4.8, 215, 22, 2024, 'W',
     96, 'B', 'A+', 66, 50000,
@@ -337,7 +337,7 @@ INSERT INTO public.tires (
     'assets/images/tires/michelin_e_primacy.webp', true
 ),
 (
-    'michelin-crossclimate-2-suv', 'Michelin', 'CrossClimate 2 SUV', '235/60 R18',
+    'michelin-crossclimate-2-suv', 'Michelin', 'Cross Climate 2 SUV', '235/60 R18',
     235, 60, 18, 'All-Weather Touring SUV', 'All-Weather (3PMSF)',
     219.99, 249.99, 4.9, 630, 30, 2024, 'V',
     107, 'B', 'B', 70, 60000,
@@ -346,7 +346,7 @@ INSERT INTO public.tires (
     'assets/images/tires/michelin_crossclimate_2_suv.webp', true
 ),
 (
-    'continental-extremecontact-dws06-plus', 'Continental', 'ExtremeContact DWS06 Plus', '225/45 R18',
+    'continental-extremecontact-dws06-plus', 'Continental', 'Extreme Contact DWS06 Plus', '225/45 R18',
     225, 45, 18, 'Ultra High Performance All-Season', 'All-Season',
     194.99, 219.99, 4.9, 890, 52, 2024, 'Y',
     95, 'A', 'C', 71, 50000,
@@ -355,7 +355,7 @@ INSERT INTO public.tires (
     'assets/images/tires/continental_extremecontact_dws06_plus.webp', true
 ),
 (
-    'continental-extremecontact-sport-02', 'Continental', 'ExtremeContact Sport 02', '245/40 R19',
+    'continental-extremecontact-sport-02', 'Continental', 'Extreme Contact Sport 02', '245/40 R19',
     245, 40, 19, 'Ultra High Performance Summer', 'Summer',
     242.99, 275.99, 4.8, 310, 25, 2024, 'Y',
     98, 'A', 'C', 70, 30000,
@@ -364,7 +364,7 @@ INSERT INTO public.tires (
     'assets/images/tires/continental_extremecontact_sport_02.webp', true
 ),
 (
-    'continental-sportcontact-7', 'Continental', 'SportContact 7', '265/35 R20',
+    'continental-sportcontact-7', 'Continental', 'Sport Contact 7', '265/35 R20',
     265, 35, 20, 'Max Performance Supercar', 'Summer',
     319.99, 359.99, 4.9, 275, 18, 2024, 'Y',
     99, 'A', 'D', 72, 25000,
@@ -373,7 +373,7 @@ INSERT INTO public.tires (
     'assets/images/tires/continental_sportcontact_7.webp', true
 ),
 (
-    'continental-ultracontact-uc7', 'Continental', 'UltraContact UC7', '205/55 R16',
+    'continental-ultracontact-uc7', 'Continental', 'Ultra Contact UC7', '205/55 R16',
     205, 55, 16, 'Daily Touring Safety & Noise', 'Summer',
     149.99, 172.99, 4.7, 480, 60, 2024, 'V',
     91, 'A', 'B', 67, 50000,
@@ -382,7 +382,7 @@ INSERT INTO public.tires (
     'assets/images/tires/continental_ultracontact_uc7.webp', true
 ),
 (
-    'continental-terraincontact-at', 'Continental', 'TerrainContact A/T', '265/70 R17',
+    'continental-terraincontact-at', 'Continental', 'Terrain Contact A/T', '265/70 R17',
     265, 70, 17, 'All-Terrain Truck & SUV', 'All-Terrain (3PMSF)',
     259.99, 289.99, 4.8, 520, 24, 2024, 'T',
     115, 'A', 'D', 72, 60000,
@@ -391,7 +391,7 @@ INSERT INTO public.tires (
     'assets/images/tires/continental_terraincontact_at.webp', true
 ),
 (
-    'continental-crosscontact-lx25', 'Continental', 'CrossContact LX25', '235/55 R19',
+    'continental-crosscontact-lx25', 'Continental', 'Cross Contact LX25', '235/55 R19',
     235, 55, 19, 'Premium Crossover / SUV Touring', 'All-Season',
     224.99, 254.99, 4.8, 340, 35, 2024, 'H',
     105, 'A', 'B', 68, 70000,
@@ -400,7 +400,7 @@ INSERT INTO public.tires (
     'assets/images/tires/continental_crosscontact_lx25.webp', true
 ),
 (
-    'continental-vikingcontact-7', 'Continental', 'VikingContact 7', '225/50 R17',
+    'continental-vikingcontact-7', 'Continental', 'Viking Contact 7', '225/50 R17',
     225, 50, 17, 'Nordic Winter / Ice & Snow', 'Winter (Studless)',
     184.99, 209.99, 4.9, 415, 20, 2024, 'T',
     98, 'B', 'C', 67, 40000,

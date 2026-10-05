@@ -32,7 +32,7 @@ class _SearchInputViewState extends State<SearchInputView> {
     '245/40 R18',
     'Bridgestone Potenza',
     'Pirelli P Zero',
-    'Continental ExtremeContact',
+    'Continental Extreme Contact',
     'Summer tires',
     'Run-Flat',
   ];

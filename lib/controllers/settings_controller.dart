@@ -1,9 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/app_theme.dart';
-import '../core/backend_config.dart';
 import '../services/firebase_sync_service.dart';
 import 'auth_controller.dart';
 
@@ -30,53 +29,12 @@ class SettingsController extends GetxController {
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
   ];
 
-  // Developer Mode Easter Egg: Tap "Version" 5 times to reveal Cloud DB settings
-  final RxInt versionTapCount = 0.obs;
-  final RxBool showDeveloperCloudSettings = false.obs;
-
   @override
   void onInit() {
     super.onInit();
-    showDeveloperCloudSettings.value = false;
-    versionTapCount.value = 0;
     nameInputController = TextEditingController(
       text: auth.isGuest.value ? '' : auth.displayName.value,
     );
-  }
-
-  /// Handles user tapping the app version tile
-  void onVersionTapped() {
-    if (showDeveloperCloudSettings.value) return;
-
-    if (Get.isSnackbarOpen) {
-      Get.closeCurrentSnackbar();
-    }
-
-    versionTapCount.value++;
-    if (versionTapCount.value >= 5) {
-      showDeveloperCloudSettings.value = true;
-      Get.snackbar(
-        'Developer Mode Unlocked',
-        'Cloud Database Architecture is now visible below Danger Zone.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(milliseconds: 1400),
-      );
-      versionTapCount.value = 0;
-    } else if (versionTapCount.value >= 2) {
-      final remaining = 5 - versionTapCount.value;
-      Get.snackbar(
-        'Developer Settings',
-        'Tap $remaining more ${remaining == 1 ? "time" : "times"} to unlock Cloud Database Architecture.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.textSecondary,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(milliseconds: 800),
-      );
-    }
   }
 
   /// Update Profile Display Name
@@ -109,26 +67,14 @@ class SettingsController extends GetxController {
 
     isSavingName.value = true;
     try {
-      await Supabase.instance.client
-          .from('profiles')
-          .update({'name': newName})
-          .eq('id', auth.userId.value);
-
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(data: {'name': newName}),
+      await FirebaseSyncService.instance.syncProfile(
+        userId: auth.userId.value,
+        name: newName,
+        email: auth.userEmail.value,
+        avatarUrl: auth.avatarUrl.value,
       );
 
       auth.displayName.value = newName;
-
-      // Sync to Firebase Firestore
-      if (BackendConfig.mirrorToSecondary.value || BackendConfig.isFirebasePrimary) {
-        await FirebaseSyncService.instance.syncProfile(
-          userId: auth.userId.value,
-          name: newName,
-          email: auth.userEmail.value,
-          avatarUrl: auth.avatarUrl.value,
-        );
-      }
 
       Get.snackbar(
         'Saved',
@@ -163,25 +109,13 @@ class SettingsController extends GetxController {
 
     auth.avatarUrl.value = url;
     try {
-      await Supabase.instance.client
-          .from('profiles')
-          .update({'avatar_url': url})
-          .eq('id', auth.userId.value);
-
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(data: {'avatar_url': url}),
-      );
-    } catch (_) {}
-
-    // Sync to Firebase Firestore
-    if (BackendConfig.mirrorToSecondary.value || BackendConfig.isFirebasePrimary) {
       await FirebaseSyncService.instance.syncProfile(
         userId: auth.userId.value,
         name: auth.displayName.value,
         email: auth.userEmail.value,
         avatarUrl: url,
       );
-    }
+    } catch (_) {}
 
     Get.back(); // Close avatar sheet if open
     Get.snackbar(
@@ -256,10 +190,10 @@ class SettingsController extends GetxController {
 
   Future<void> _executeAccountTermination() async {
     try {
-      await Supabase.instance.client
-          .from('profiles')
-          .delete()
-          .eq('id', auth.userId.value);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(auth.userId.value)
+          .delete();
     } catch (_) {}
 
     await auth.signOut();
@@ -277,8 +211,6 @@ class SettingsController extends GetxController {
 
   @override
   void onClose() {
-    showDeveloperCloudSettings.value = false;
-    versionTapCount.value = 0;
     nameInputController.dispose();
     customAvatarController.dispose();
     super.onClose();

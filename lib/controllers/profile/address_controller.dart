@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_theme.dart';
-import '../../core/backend_config.dart';
 import '../../services/firebase_sync_service.dart';
 import '../auth_controller.dart';
 
 /// AddressController manages user delivery address state,
-/// persistence with Supabase `user_addresses`, and local caching.
+/// persistence with Firebase Firestore `user_addresses`, and local caching.
 class AddressController extends GetxController {
   final AuthController auth = Get.find<AuthController>();
 
@@ -59,35 +57,13 @@ class AddressController extends GetxController {
     postalCodeController.text = postalCode.value;
   }
 
-  /// Fetches saved address from Supabase
+  /// Fetches saved address from Firestore
   Future<void> fetchAddress(String userId) async {
     if (userId.isEmpty) return;
     isLoading.value = true;
 
     try {
-      Map<String, dynamic>? data;
-
-      // 1. If Firebase is primary, try Firebase first
-      if (BackendConfig.isFirebasePrimary) {
-        data = await FirebaseSyncService.instance.getAddress(userId);
-      }
-
-      // 2. If not found or Supabase is primary, try Supabase
-      if (data == null) {
-        final client = Supabase.instance.client;
-        final res = await client
-            .from('user_addresses')
-            .select()
-            .eq('user_id', userId)
-            .maybeSingle();
-        if (res != null) {
-          data = Map<String, dynamic>.from(res);
-        }
-      }
-
-      // 3. Fallback: if Supabase was empty, check Firebase
-      data ??= await FirebaseSyncService.instance.getAddress(userId);
-
+      final data = await FirebaseSyncService.instance.getAddress(userId);
       if (data != null) {
         recipientName.value = data['recipient_name'] as String? ?? '';
         phoneNumber.value = data['phone_number'] as String? ?? '';
@@ -103,7 +79,7 @@ class AddressController extends GetxController {
     }
   }
 
-  /// Saves or updates the address to Supabase
+  /// Saves or updates the address in Firestore
   Future<bool> saveAddress() async {
     if (auth.isGuest.value) {
       Get.toNamed('/sign-in');
@@ -140,32 +116,12 @@ class AddressController extends GetxController {
     try {
       // Update reactive values locally first for instant UI response
       recipientName.value = name;
-    phoneNumber.value = phone;
-    streetAddress.value = street;
-    city.value = userCity;
-    postalCode.value = zip;
+      phoneNumber.value = phone;
+      streetAddress.value = street;
+      city.value = userCity;
+      postalCode.value = zip;
 
-    // 1. Save to Supabase (if primary or mirror enabled)
-    if (BackendConfig.isSupabasePrimary || BackendConfig.mirrorToSecondary.value) {
-      try {
-        final client = Supabase.instance.client;
-        await client.from('user_addresses').upsert({
-          'user_id': auth.userId.value,
-          'recipient_name': name,
-          'phone_number': phone,
-          'street_address': street,
-          'city': userCity,
-          'postal_code': zip,
-          'is_default': true,
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        });
-      } catch (e) {
-        debugPrint('[AddressController] Supabase upsert note: $e');
-      }
-    }
-
-    // 2. Save to Firebase Firestore (if primary or mirror enabled)
-    if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
+      // Save to Firebase Firestore
       await FirebaseSyncService.instance.syncAddress(
         userId: auth.userId.value,
         recipientName: name,
@@ -174,41 +130,27 @@ class AddressController extends GetxController {
         city: userCity,
         postalCode: zip,
       );
-    }
 
-    Get.back(); // Dismiss modal
-    Get.snackbar(
-      'Address Saved',
-      'Your delivery address has been saved successfully (${BackendConfig.primaryBackend.value.shortName}).',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppTheme.surfaceDark,
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-    );
-    return true;
+      Get.back(); // Dismiss modal
+      Get.snackbar(
+        'Address Saved',
+        'Your delivery address has been saved successfully in Firebase.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppTheme.surfaceDark,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return true;
     } finally {
       isSaving.value = false;
     }
   }
 
-  /// Deletes the saved delivery address
+  /// Deletes the saved delivery address in Firestore
   Future<void> deleteAddress() async {
     if (auth.isGuest.value) return;
 
-    if (BackendConfig.isSupabasePrimary || BackendConfig.mirrorToSecondary.value) {
-      try {
-        await Supabase.instance.client
-            .from('user_addresses')
-            .delete()
-            .eq('user_id', auth.userId.value);
-      } catch (e) {
-        debugPrint('[AddressController] Note deleting address in Supabase: $e');
-      }
-    }
-
-    if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
-      await FirebaseSyncService.instance.deleteAddress(auth.userId.value);
-    }
+    await FirebaseSyncService.instance.deleteAddress(auth.userId.value);
 
     reset();
     Get.back();

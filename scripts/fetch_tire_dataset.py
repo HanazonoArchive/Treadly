@@ -122,7 +122,7 @@ TIRES_CONFIG = [
     {
         "id": "michelin-e-primacy",
         "brand": "Michelin",
-        "model": "e.Primacy Electric Drive",
+        "model": "e-Primacy Electric Drive",
         "category": "EV Energy Saving",
         "season": "Summer EV",
         "width": 235,
@@ -148,7 +148,7 @@ TIRES_CONFIG = [
     {
         "id": "michelin-crossclimate-2-suv",
         "brand": "Michelin",
-        "model": "CrossClimate 2 SUV",
+        "model": "Cross Climate 2 SUV",
         "category": "All-Weather Touring SUV",
         "season": "All-Weather (3PMSF)",
         "width": 235,
@@ -176,7 +176,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-extremecontact-dws06-plus",
         "brand": "Continental",
-        "model": "ExtremeContact DWS06 Plus",
+        "model": "Extreme Contact DWS06 Plus",
         "category": "Ultra High Performance All-Season",
         "season": "All-Season",
         "width": 225,
@@ -202,7 +202,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-extremecontact-sport-02",
         "brand": "Continental",
-        "model": "ExtremeContact Sport 02",
+        "model": "Extreme Contact Sport 02",
         "category": "Ultra High Performance Summer",
         "season": "Summer",
         "width": 245,
@@ -228,7 +228,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-sportcontact-7",
         "brand": "Continental",
-        "model": "SportContact 7",
+        "model": "Sport Contact 7",
         "category": "Max Performance Supercar",
         "season": "Summer",
         "width": 265,
@@ -254,7 +254,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-ultracontact-uc7",
         "brand": "Continental",
-        "model": "UltraContact UC7",
+        "model": "Ultra Contact UC7",
         "category": "Daily Touring Safety & Noise",
         "season": "Summer",
         "width": 205,
@@ -280,7 +280,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-terraincontact-at",
         "brand": "Continental",
-        "model": "TerrainContact A/T",
+        "model": "Terrain Contact A/T",
         "category": "All-Terrain Truck & SUV",
         "season": "All-Terrain (3PMSF)",
         "width": 265,
@@ -306,7 +306,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-crosscontact-lx25",
         "brand": "Continental",
-        "model": "CrossContact LX25",
+        "model": "Cross Contact LX25",
         "category": "Premium Crossover / SUV Touring",
         "season": "All-Season",
         "width": 235,
@@ -332,7 +332,7 @@ TIRES_CONFIG = [
     {
         "id": "continental-vikingcontact-7",
         "brand": "Continental",
-        "model": "VikingContact 7",
+        "model": "Viking Contact 7",
         "category": "Nordic Winter / Ice & Snow",
         "season": "Winter (Studless)",
         "width": 225,

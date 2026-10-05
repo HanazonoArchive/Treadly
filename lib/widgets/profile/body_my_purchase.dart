@@ -117,37 +117,38 @@ class MyPurchaseSection extends StatelessWidget {
   }) {
     return Material(
       color: AppTheme.bgDark.withValues(alpha: 0.75),
-      borderRadius: BorderRadius.circular(5),
+      borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(10),
         splashColor: AppTheme.accentOrange.withValues(alpha: 0.2),
         highlightColor: AppTheme.accentOrange.withValues(alpha: 0.1),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppTheme.accentOrange, size: 26),
+              Badge(
+                isLabelVisible: count > 0,
+                backgroundColor: AppTheme.accentOrange,
+                textColor: Colors.black,
+                label: Text(
+                  count > 99 ? '99+' : '$count',
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10),
+                ),
+                child: Icon(icon, color: AppTheme.accentOrange, size: 26),
+              ),
               const SizedBox(height: 8),
               Text(
                 label,
                 style: const TextStyle(
                   color: AppTheme.textSecondary,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
-              if (count > 0)
-                Text(
-                  count.toString(),
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
             ],
           ),
         ),

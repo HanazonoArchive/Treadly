@@ -1,99 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/backend_config.dart';
 import '../models/tire.dart';
-import 'database_service.dart';
 import 'firebase_sync_service.dart';
 
-/// TireRepository orchestrates Treadly's 3-Tier Database System:
-/// 1. Cloud Database (Live): Supabase (PostgreSQL) or Firebase Firestore
-/// 2. Local Database (Cache): SQLite for offline device storage
-/// 3. Asset Bundle (Fallback): assets/data/tires.json (zero-failure guarantee)
+/// TireRepository orchestrates Treadly's Tire Catalog:
+/// 1. Cloud Database (Primary Live): Firebase Cloud Firestore `tires` collection
+/// 2. Asset Bundle (Offline Fallback): assets/data/tires.json (zero-failure guarantee)
 class TireRepository {
   static final TireRepository instance = TireRepository._internal();
   TireRepository._internal();
 
-  /// Fetches the catalog from the active database system
+  /// Fetches the catalog from Firebase Firestore with JSON asset fallback
   Future<List<Tire>> fetchTires() async {
-    List<Tire> tires = [];
+    // 1. Try Firebase Firestore
+    List<Tire> tires = await _fetchFromFirestore();
 
-    // 1. Try Primary Cloud Database
-    if (BackendConfig.isSupabasePrimary) {
-      tires = await _fetchFromSupabase();
-      if (tires.isEmpty && BackendConfig.mirrorToSecondary.value) {
-        tires = await _fetchFromFirestore();
-      }
-    } else {
-      tires = await _fetchFromFirestore();
-      if (tires.isEmpty && BackendConfig.mirrorToSecondary.value) {
-        tires = await _fetchFromSupabase();
-      }
-    }
-
-    // If cloud succeeded, cache to local SQLite for offline access
     if (tires.isNotEmpty) {
-      DatabaseService.instance.cacheTires(tires);
-      // Auto-heal Firestore if Firebase is primary and Firestore was empty
-      if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
-        FirebaseSyncService.instance.cleanLegacyFirestoreTires();
-        FirebaseSyncService.instance.syncTires(tires);
-      }
       return tires;
     }
 
-    // 2. Try Local SQLite Cache (Offline fallback)
-    try {
-      final cached = await DatabaseService.instance.getCachedTires();
-      if (cached.isNotEmpty) {
-        debugPrint('[TireRepository] Loaded ${cached.length} tires from local SQLite cache.');
-        return cached;
-      }
-    } catch (e) {
-      debugPrint('[TireRepository] SQLite read note: $e');
-    }
-
-    // 3. Fallback to local asset JSON (Zero-failure offline guarantee)
+    // 2. Fallback to local asset JSON (Zero-failure offline guarantee)
     try {
       final jsonString = await rootBundle.loadString('assets/data/tires.json');
       final fallbackList = Tire.fromJsonList(jsonString);
       debugPrint('[TireRepository] Loaded ${fallbackList.length} tires from bundled asset JSON.');
       if (fallbackList.isNotEmpty) {
-        DatabaseService.instance.cacheTires(fallbackList);
-        if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
-          FirebaseSyncService.instance.syncTires(fallbackList);
-        }
+        // Auto-seed Firestore in background
+        FirebaseSyncService.instance.cleanLegacyFirestoreTires();
+        FirebaseSyncService.instance.syncTires(fallbackList);
       }
       return fallbackList;
     } catch (e) {
       debugPrint('[TireRepository] Error loading fallback tires JSON: $e');
       return [];
     }
-  }
-
-  /// Fetches tires from Supabase PostgreSQL `tires` table
-  Future<List<Tire>> _fetchFromSupabase() async {
-    try {
-      final client = Supabase.instance.client;
-      final response = await client
-          .from('tires')
-          .select()
-          .order('rating', ascending: false);
-
-      if (response.isNotEmpty) {
-        final list = response
-            .map((row) => Tire.fromJson(row))
-            .toList();
-        final deduplicated = _deduplicateTires(list);
-        debugPrint('[TireRepository] Successfully loaded ${deduplicated.length} live tires from Supabase.');
-        return deduplicated;
-      }
-    } catch (e) {
-      debugPrint('[TireRepository] Supabase fetch note: $e');
-    }
-    return [];
   }
 
   /// Fetches tires from Firebase Firestore `tires` collection
@@ -168,17 +110,8 @@ class TireRepository {
     return uniqueTires.values.toList();
   }
 
-  /// Seeds or updates Supabase/Firestore with catalog data (e.g. from admin or setup)
+  /// Seeds or updates Firestore with catalog data
   Future<void> seedLiveDatabase(List<Tire> tires) async {
-    try {
-      final client = Supabase.instance.client;
-      final supabaseRows = tires.map((t) => t.toJson()).toList();
-      await client.from('tires').upsert(supabaseRows);
-      debugPrint('[TireRepository] Seeded ${tires.length} tires into Supabase.');
-    } catch (e) {
-      debugPrint('[TireRepository] Error seeding Supabase: $e');
-    }
-
     try {
       final firestore = FirebaseFirestore.instance;
       for (final tire in tires) {
@@ -193,26 +126,11 @@ class TireRepository {
     }
   }
 
-  /// Decrements stock for purchased tires across Supabase, Firestore, and SQLite
+  /// Decrements stock for purchased tires in Firestore
   Future<void> decrementStock({
     required String tireId,
     required int quantityDeducted,
   }) async {
-    // 1. Supabase decrement
-    try {
-      final client = Supabase.instance.client;
-      final row = await client.from('tires').select('stock').eq('id', tireId).maybeSingle();
-      if (row != null) {
-        final currentStock = (row['stock'] as num?)?.toInt() ?? 0;
-        final newStock = (currentStock - quantityDeducted).clamp(0, 999999);
-        await client.from('tires').update({'stock': newStock}).eq('id', tireId);
-        debugPrint('[TireRepository] Decremented Supabase stock for $tireId to $newStock');
-      }
-    } catch (e) {
-      debugPrint('[TireRepository] Supabase stock decrement error: $e');
-    }
-
-    // 2. Firestore decrement
     try {
       final docRef = FirebaseFirestore.instance.collection('tires').doc(tireId);
       final docSnap = await docRef.get();
@@ -224,21 +142,6 @@ class TireRepository {
       }
     } catch (e) {
       debugPrint('[TireRepository] Firestore stock decrement error: $e');
-    }
-
-    // 3. Local SQLite decrement
-    try {
-      final db = await DatabaseService.instance.database;
-      if (db != null) {
-        final rows = await db.query('tires', columns: ['stock'], where: 'id = ?', whereArgs: [tireId]);
-        if (rows.isNotEmpty) {
-          final currentStock = (rows.first['stock'] as num?)?.toInt() ?? 0;
-          final newStock = (currentStock - quantityDeducted).clamp(0, 999999);
-          await db.update('tires', {'stock': newStock}, where: 'id = ?', whereArgs: [tireId]);
-        }
-      }
-    } catch (e) {
-      debugPrint('[TireRepository] SQLite stock decrement error: $e');
     }
   }
 }

@@ -3,10 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/app_theme.dart';
-import '../../core/backend_config.dart';
 import '../../models/tire.dart';
 import '../../services/firebase_sync_service.dart';
 import '../../services/tire_repository.dart';
@@ -14,6 +12,7 @@ import '../auth_controller.dart';
 import '../home/home_controller.dart';
 import '../navigation_controller.dart';
 import '../profile/my_purchase_controller.dart';
+import '../profile/my_wallet_controller.dart';
 import '../search/search_controller.dart';
 
 /// Single item in the shopping cart
@@ -59,10 +58,9 @@ class CartItem {
   }
 }
 
-/// Global Cart Controller orchestrating Treadly's 3-Tier Database System:
-/// 1. Local Persistence (Fast & Offline): SharedPreferences / SQLite (never resets across restarts)
-/// 2. Cloud Primary (Supabase): Synchronizes active cart for logged-in users across devices
-/// 3. Cloud Mirror (Firestore): Backs up active cart if Firebase or mirroring is enabled
+/// Global Cart Controller:
+/// 1. Local Persistence (Fast & Offline): SharedPreferences (preserves cart across restarts)
+/// 2. Cloud Primary (Cloud Firestore): Synchronizes active cart for logged-in users
 class CartController extends GetxController {
   static const String _prefCartKey = 'treadly_active_cart_cache';
 
@@ -80,11 +78,13 @@ class CartController extends GetxController {
   Future<void> _initCart() async {
     await _loadFromLocalCache();
 
-    // If authenticated user session already active, sync with cloud
+    // If authenticated user session already active, sync with Firestore
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        await syncWithUser(user.id);
+      if (Get.isRegistered<AuthController>()) {
+        final auth = Get.find<AuthController>();
+        if (!auth.isGuest.value && auth.userId.value.isNotEmpty) {
+          await syncWithUser(auth.userId.value);
+        }
       }
     } catch (_) {}
   }
@@ -250,10 +250,11 @@ class CartController extends GetxController {
 
   /// Real Checkout Flow:
   /// 1. Verifies stock availability.
-  /// 2. Deducts stock from Supabase, Firestore, and SQLite.
-  /// 3. Records the order in Supabase and Firestore.
+  /// 2. Deducts stock from Firestore.
+  /// 3. Records the order in Firestore.
   /// 4. Updates profile "My Purchases" (to_ship status).
-  /// 5. Clears active cart.
+  /// 5. Awards 5% points in My Wallet.
+  /// 6. Clears active cart.
   Future<bool> processCheckout() async {
     if (items.isEmpty) return false;
 
@@ -278,7 +279,7 @@ class CartController extends GetxController {
     final orderTotal = subtotal;
 
     try {
-      // 1. Decrement stock across Supabase, Firestore, and local SQLite
+      // 1. Decrement stock in Firestore
       for (final item in purchasedItems) {
         await TireRepository.instance.decrementStock(
           tireId: item.tire.id,
@@ -299,7 +300,7 @@ class CartController extends GetxController {
         Get.find<MyPurchaseController>().toShipCount.value++;
       }
 
-      // 4. Save order to Supabase & Firestore if user is authenticated
+      // 4. Save order to Firestore if user is authenticated
       String? currentUserId;
       if (Get.isRegistered<AuthController>()) {
         final auth = Get.find<AuthController>();
@@ -309,29 +310,6 @@ class CartController extends GetxController {
       }
 
       if (currentUserId != null) {
-        // Record in Supabase
-        try {
-          final client = Supabase.instance.client;
-          await client.from('orders').insert({
-            'id': orderId,
-            'user_id': currentUserId,
-            'status': 'to_ship',
-            'total_amount': orderTotal,
-            'created_at': DateTime.now().toUtc().toIso8601String(),
-          });
-          for (final item in purchasedItems) {
-            await client.from('order_items').insert({
-              'order_id': orderId,
-              'tire_id': item.tire.id,
-              'quantity': item.actualTiresCount,
-              'price_at_purchase': item.unitPrice,
-            });
-          }
-        } catch (e) {
-          debugPrint('[CartController] Supabase order insert note: $e');
-        }
-
-        // Record in Firestore
         try {
           final db = FirebaseFirestore.instance;
           await db.collection('orders').doc(orderId).set({
@@ -356,6 +334,11 @@ class CartController extends GetxController {
         } catch (e) {
           debugPrint('[CartController] Firestore order insert note: $e');
         }
+
+        // Award 5% points in wallet
+        if (Get.isRegistered<MyWalletController>()) {
+          Get.find<MyWalletController>().awardPointsFromCheckout(orderTotal);
+        }
       }
 
       // 5. Clear cart
@@ -369,8 +352,8 @@ class CartController extends GetxController {
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: AppTheme.borderDark, width: 1.2),
           ),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.check_circle_rounded, color: AppTheme.accentOrange, size: 28),
               SizedBox(width: 10),
               Text(
@@ -407,7 +390,7 @@ class CartController extends GetxController {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Stock has been decremented in the database. Your tires are now marked as "To Ship" in your purchases.',
+                'Stock has been decremented in Firestore. Your tires are now marked as "To Ship" in your purchases.',
                 style: TextStyle(color: Color(0xFF10B981), fontSize: 12, height: 1.3),
               ),
             ],
@@ -471,7 +454,7 @@ class CartController extends GetxController {
   }
 
   // ===========================================================================
-  // CLOUD SYNCHRONIZATION (Supabase PostgreSQL + Firebase Firestore)
+  // CLOUD SYNCHRONIZATION (Firebase Cloud Firestore)
   // ===========================================================================
 
   /// Synchronize cart when a user signs in or changes account
@@ -480,14 +463,7 @@ class CartController extends GetxController {
     isSyncing.value = true;
 
     try {
-      // 1. Fetch cloud cart from Supabase if primary
-      if (BackendConfig.isSupabasePrimary) {
-        await _mergeWithSupabaseCart(userId);
-      } else {
-        await _mergeWithFirestoreCart(userId);
-      }
-
-      // 2. Persist merged result locally
+      await _mergeWithFirestoreCart(userId);
       await _persistToLocalCache();
     } catch (e) {
       debugPrint('[CartController] Error syncing cart with user: $e');
@@ -507,78 +483,15 @@ class CartController extends GetxController {
 
     if (currentUserId == null || currentUserId.isEmpty) return;
 
-    // 1. Sync to Supabase
-    if (BackendConfig.isSupabasePrimary || BackendConfig.mirrorToSecondary.value) {
-      try {
-        final client = Supabase.instance.client;
-        // Clear old items for this user and insert current items
-        await client.from('cart_items').delete().eq('user_id', currentUserId);
-
-        if (items.isNotEmpty) {
-          final rows = items.map((item) => {
-            'user_id': currentUserId,
-            'tire_id': item.tire.id,
-            'quantity': item.quantity,
-            'is_set_of_four': item.isSetOfFour,
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          }).toList();
-          await client.from('cart_items').insert(rows);
-        }
-        debugPrint('[CartController] Synced ${items.length} cart items to Supabase for $currentUserId');
-      } catch (e) {
-        debugPrint('[CartController] Supabase cart sync note: $e');
-      }
-    }
-
-    // 2. Mirror to Firebase Firestore
-    if (BackendConfig.isFirebasePrimary || BackendConfig.mirrorToSecondary.value) {
-      try {
-        final firestoreMaps = items.map((item) => {
-          'tire_id': item.tire.id,
-          'quantity': item.quantity,
-          'is_set_of_four': item.isSetOfFour,
-        }).toList();
-        await FirebaseSyncService.instance.syncCart(currentUserId, firestoreMaps);
-      } catch (e) {
-        debugPrint('[CartController] Firestore cart sync note: $e');
-      }
-    }
-  }
-
-  Future<void> _mergeWithSupabaseCart(String userId) async {
     try {
-      final client = Supabase.instance.client;
-      final response = await client
-          .from('cart_items')
-          .select('tire_id, quantity, is_set_of_four')
-          .eq('user_id', userId);
-
-      if (response.isNotEmpty) {
-        final catalog = await TireRepository.instance.fetchTires();
-        final catalogMap = {for (final t in catalog) t.id: t};
-
-        for (final row in response) {
-          final tireId = row['tire_id'] as String;
-          final qty = (row['quantity'] as num?)?.toInt() ?? 1;
-          final isSet = row['is_set_of_four'] as bool? ?? false;
-
-          final tire = catalogMap[tireId];
-          if (tire != null) {
-            final idx = items.indexWhere((i) => i.tire.id == tireId && i.isSetOfFour == isSet);
-            if (idx >= 0) {
-              if (qty > items[idx].quantity) items[idx].quantity = qty;
-            } else {
-              items.add(CartItem(tire: tire, quantity: qty, isSetOfFour: isSet));
-            }
-          }
-        }
-        items.refresh();
-      } else if (items.isNotEmpty) {
-        // Cloud was empty, push local cart
-        await _syncToCloud();
-      }
+      final firestoreMaps = items.map((item) => {
+        'tire_id': item.tire.id,
+        'quantity': item.quantity,
+        'is_set_of_four': item.isSetOfFour,
+      }).toList();
+      await FirebaseSyncService.instance.syncCart(currentUserId, firestoreMaps);
     } catch (e) {
-      debugPrint('[CartController] Supabase merge note: $e');
+      debugPrint('[CartController] Firestore cart sync note: $e');
     }
   }
 

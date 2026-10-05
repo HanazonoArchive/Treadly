@@ -352,8 +352,8 @@ class FirebaseSyncService {
     }
   }
 
-  /// Pushes test documents to ALL 8 Firestore collections matching Supabase 1:1:
-  /// (tires, users, user_wallets, vouchers, user_vouchers, orders, order_items, user_addresses)
+  /// Pushes test documents to all 9 Firestore collections and subcollections:
+  /// (tires, users, user_wallets, vouchers, user_vouchers, orders, order_items, user_addresses, cart)
   Future<String?> testPushLiveDemoData() async {
     try {
       // 1. tires collection (Treadly Tire Catalog with full 15 models and rich schema)

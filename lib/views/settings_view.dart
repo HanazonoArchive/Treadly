@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../controllers/auth_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/app_theme.dart';
-import '../core/backend_config.dart';
-import '../services/firebase_sync_service.dart';
 import '../services/navigation_service.dart';
 
 class SettingsView extends StatelessWidget {
@@ -35,17 +32,6 @@ class SettingsView extends StatelessWidget {
                     _buildAppStorageSection(controller),
                     const SizedBox(height: 36),
                     _buildDangerZoneSection(controller),
-                    Obx(() {
-                      if (controller.showDeveloperCloudSettings.value) {
-                        return Column(
-                          children: [
-                            const SizedBox(height: 36),
-                            _buildCloudDatabaseSection(),
-                          ],
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -290,288 +276,6 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  Widget _buildCloudDatabaseSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Cloud Database Architecture',
-              style: TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.accentOrange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: AppTheme.accentOrange.withValues(alpha: 0.4),
-                ),
-              ),
-              child: const Text(
-                'MULTI-CLOUD',
-                style: TextStyle(
-                  color: AppTheme.accentOrange,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceDark,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderDark),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          LucideIcons.database,
-                          color: AppTheme.accentOrange,
-                          size: 20,
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Primary Database Provider',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Choose which cloud backend acts as your primary database',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Obx(
-                      () => Row(
-                        children: [
-                          Expanded(
-                            child: _buildDatabaseOption(
-                              title: 'Supabase',
-                              subtitle: 'PostgreSQL',
-                              isSelected: BackendConfig.isSupabasePrimary,
-                              onTap: () {
-                                if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
-                                BackendConfig.setPrimary(CloudBackend.supabase);
-                                Get.snackbar(
-                                  'Primary Database Set',
-                                  'Supabase (PostgreSQL) is now your primary database.',
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  backgroundColor: AppTheme.surfaceDark,
-                                  colorText: Colors.white,
-                                  margin: const EdgeInsets.all(16),
-                                  duration: const Duration(milliseconds: 1400),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _buildDatabaseOption(
-                              title: 'Firebase',
-                              subtitle: 'Cloud Firestore',
-                              isSelected: BackendConfig.isFirebasePrimary,
-                              onTap: () {
-                                if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
-                                BackendConfig.setPrimary(CloudBackend.firebase);
-                                Get.snackbar(
-                                  'Primary Database Set',
-                                  'Firebase (Cloud Firestore) is now your primary database.',
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  backgroundColor: AppTheme.surfaceDark,
-                                  colorText: AppTheme.accentOrange,
-                                  margin: const EdgeInsets.all(16),
-                                  duration: const Duration(milliseconds: 1400),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: AppTheme.borderDark, height: 1),
-              Obx(
-                () => _buildSwitchTile(
-                  icon: LucideIcons.refreshCw,
-                  title: 'Real-Time Dual-Cloud Sync',
-                  subtitle: 'Mirrors data to both Supabase & Firebase Firestore',
-                  value: BackendConfig.mirrorToSecondary.value,
-                  onChanged: (val) {
-                    if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
-                    BackendConfig.toggleMirror(val);
-                    Get.snackbar(
-                      val ? 'Dual-Sync Enabled' : 'Dual-Sync Disabled',
-                      val
-                          ? 'Transactions mirror to both Supabase & Firebase Firestore.'
-                          : 'Transactions only route to the primary database.',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppTheme.surfaceDark,
-                      colorText: Colors.white,
-                      margin: const EdgeInsets.all(16),
-                      duration: const Duration(milliseconds: 1400),
-                    );
-                  },
-                ),
-              ),
-              const Divider(color: AppTheme.borderDark, height: 1),
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentOrange,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    icon: const Icon(LucideIcons.database, size: 16),
-                    label: const Text(
-                      'Push 1:1 Live Data to Firebase Console',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    onPressed: () async {
-                      final auth = Get.isRegistered<AuthController>() ? Get.find<AuthController>() : null;
-                      final uid = (auth != null && !auth.isGuest.value) ? auth.userId.value : null;
-
-                      Get.snackbar(
-                        'Syncing to Firebase...',
-                        'Writing 1:1 live collections (tires, users, wallets, vouchers, orders, addresses, cart)...',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: AppTheme.surfaceDark,
-                        colorText: AppTheme.accentOrange,
-                        margin: const EdgeInsets.all(16),
-                        duration: const Duration(seconds: 2),
-                      );
-
-                      final report = await FirebaseSyncService.instance.performFullMirrorSync(userId: uid);
-                      final error = report['error'] as String?;
-
-                      if (error == null) {
-                        Get.snackbar(
-                          'Firestore 1:1 Sync Completed!',
-                          'Synced: ${report['tires_synced']} tires, ${report['catalog_vouchers_synced']} vouchers, ${report['orders_synced']} orders, ${report['order_items_synced']} order items, and user profile/wallet/cart! Check your Firebase Console.',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: AppTheme.surfaceDark,
-                          colorText: Colors.white,
-                          margin: const EdgeInsets.all(16),
-                          duration: const Duration(seconds: 5),
-                        );
-                      } else {
-                        Get.snackbar(
-                          'Firestore Sync Note',
-                          'Error: $error\nEnsure Firestore rules in Firebase Console are in Test Mode (allow read, write: if true;).',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: AppTheme.surfaceDark,
-                          colorText: Colors.redAccent,
-                          margin: const EdgeInsets.all(16),
-                          duration: const Duration(seconds: 6),
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDatabaseOption({
-    required String title,
-    required String subtitle,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: isSelected
-          ? AppTheme.accentOrange.withValues(alpha: 0.15)
-          : AppTheme.bgDark.withValues(alpha: 0.8),
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? AppTheme.accentOrange : AppTheme.borderDark,
-              width: isSelected ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isSelected) ...[
-                    const Icon(
-                      LucideIcons.check,
-                      color: AppTheme.accentOrange,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppTheme.accentOrange
-                          : AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAppStorageSection(SettingsController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,20 +303,15 @@ class SettingsView extends StatelessWidget {
                 onTap: () => controller.clearAppCache(),
               ),
               const Divider(color: AppTheme.borderDark, height: 1),
-              Obx(
-                () => ListTile(
-                  leading: const Icon(LucideIcons.info, color: AppTheme.textSecondary, size: 20),
-                  title: const Text(
-                    'Version',
-                    style: TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                  trailing: const Text(
-                    'v1.0.0 (Build 1)',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                  ),
-                  onTap: controller.showDeveloperCloudSettings.value
-                      ? null
-                      : () => controller.onVersionTapped(),
+              const ListTile(
+                leading: Icon(LucideIcons.info, color: AppTheme.textSecondary, size: 20),
+                title: Text(
+                  'Version',
+                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                trailing: Text(
+                  'v1.0.0 (Build 1)',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                 ),
               ),
             ],

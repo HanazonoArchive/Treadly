@@ -160,11 +160,28 @@ class Tire {
     );
   }
 
+  /// Normalizes legacy connected model names to clean separated words
+  static String normalizeModelName(String rawModel) {
+    const Map<String, String> map = {
+      'CrossContact LX25': 'Cross Contact LX25',
+      'ExtremeContact DWS06 Plus': 'Extreme Contact DWS06 Plus',
+      'ExtremeContact Sport 02': 'Extreme Contact Sport 02',
+      'SportContact 7': 'Sport Contact 7',
+      'UltraContact UC7': 'Ultra Contact UC7',
+      'TerrainContact A/T': 'Terrain Contact A/T',
+      'VikingContact 7': 'Viking Contact 7',
+      'CrossClimate 2 SUV': 'Cross Climate 2 SUV',
+      'e.Primacy Electric Drive': 'e-Primacy Electric Drive',
+      'e.Primacy': 'e-Primacy',
+    };
+    return map[rawModel.trim()] ?? rawModel;
+  }
+
   factory Tire.fromJson(Map<String, dynamic> json) {
     return Tire(
       id: json['id'] as String? ?? '',
       brand: json['brand'] as String? ?? '',
-      model: json['model'] as String? ?? '',
+      model: normalizeModelName(json['model'] as String? ?? ''),
       category: json['category'] as String? ?? '',
       season: json['season'] as String? ?? '',
       width: (json['width'] as num?)?.toInt() ?? 225,
