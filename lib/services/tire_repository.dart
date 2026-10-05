@@ -17,25 +17,29 @@ class TireRepository {
     // 1. Try Firebase Firestore
     List<Tire> tires = await _fetchFromFirestore();
 
+    // 2. Load bundled asset JSON
+    List<Tire> fallbackList = [];
+    try {
+      final jsonString = await rootBundle.loadString('assets/data/tires.json');
+      fallbackList = Tire.fromJsonList(jsonString);
+    } catch (e) {
+      debugPrint('[TireRepository] Error loading fallback tires JSON: $e');
+    }
+
+    // If Firestore has fewer tires than the full expanded catalog (e.g. catalog expansion to 100+ items),
+    // sync the full catalog to Firestore in background and return the complete list!
+    if (fallbackList.isNotEmpty && tires.length < fallbackList.length) {
+      debugPrint('[TireRepository] Expanded catalog detected (${fallbackList.length} tires vs ${tires.length} in Firestore). Syncing to Firestore...');
+      FirebaseSyncService.instance.cleanLegacyFirestoreTires();
+      FirebaseSyncService.instance.syncTires(fallbackList);
+      return fallbackList;
+    }
+
     if (tires.isNotEmpty) {
       return tires;
     }
 
-    // 2. Fallback to local asset JSON (Zero-failure offline guarantee)
-    try {
-      final jsonString = await rootBundle.loadString('assets/data/tires.json');
-      final fallbackList = Tire.fromJsonList(jsonString);
-      debugPrint('[TireRepository] Loaded ${fallbackList.length} tires from bundled asset JSON.');
-      if (fallbackList.isNotEmpty) {
-        // Auto-seed Firestore in background
-        FirebaseSyncService.instance.cleanLegacyFirestoreTires();
-        FirebaseSyncService.instance.syncTires(fallbackList);
-      }
-      return fallbackList;
-    } catch (e) {
-      debugPrint('[TireRepository] Error loading fallback tires JSON: $e');
-      return [];
-    }
+    return fallbackList;
   }
 
   /// Fetches tires from Firebase Firestore `tires` collection
@@ -67,9 +71,8 @@ class TireRepository {
     return [];
   }
 
-  /// Deduplicates tires by normalized brand and model.
-  /// Automatically discards legacy short IDs if modern models exist,
-  /// and prioritizes rows with richer database attributes.
+  /// Deduplicates tires by unique ID, safely filtering legacy short IDs
+  /// while preserving distinct models and size variants.
   List<Tire> _deduplicateTires(List<Tire> list) {
     const legacyIds = {
       'michelin-ps5-225-45-18',
@@ -84,26 +87,20 @@ class TireRepository {
 
     final Map<String, Tire> uniqueTires = {};
     for (final tire in list) {
-      final key = '${tire.brand.trim().toLowerCase()}_${tire.model.trim().toLowerCase()}';
+      if (legacyIds.contains(tire.id.toLowerCase())) continue;
+
+      final key = tire.id.isNotEmpty
+          ? tire.id.trim().toLowerCase()
+          : '${tire.brand.trim().toLowerCase()}_${tire.model.trim().toLowerCase()}_${tire.rimSize}_${tire.width}';
       
       if (!uniqueTires.containsKey(key)) {
         uniqueTires[key] = tire;
       } else {
         final existing = uniqueTires[key]!;
-        final existingIsLegacy = legacyIds.contains(existing.id);
-        final currentIsLegacy = legacyIds.contains(tire.id);
-
-        if (existingIsLegacy && !currentIsLegacy) {
+        final existingScore = existing.reviewsCount + (existing.description != null ? 100 : 0);
+        final currentScore = tire.reviewsCount + (tire.description != null ? 100 : 0);
+        if (currentScore > existingScore) {
           uniqueTires[key] = tire;
-        } else if (!existingIsLegacy && currentIsLegacy) {
-          // Keep the modern rich tire
-        } else {
-          // Compare richness (reviews, description)
-          final existingScore = existing.reviewsCount + (existing.description != null ? 100 : 0);
-          final currentScore = tire.reviewsCount + (tire.description != null ? 100 : 0);
-          if (currentScore > existingScore) {
-            uniqueTires[key] = tire;
-          }
         }
       }
     }

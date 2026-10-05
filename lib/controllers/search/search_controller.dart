@@ -170,10 +170,13 @@ class SearchCatalogController extends GetxController {
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
       list = list.where((t) {
+        final matchesCars = t.compatibleCars != null &&
+            t.compatibleCars!.any((c) => c.toLowerCase().contains(q));
         return t.fullName.toLowerCase().contains(q) ||
             t.size.toLowerCase().contains(q) ||
             t.brand.toLowerCase().contains(q) ||
-            t.category.toLowerCase().contains(q);
+            t.category.toLowerCase().contains(q) ||
+            matchesCars;
       }).toList();
     }
 
