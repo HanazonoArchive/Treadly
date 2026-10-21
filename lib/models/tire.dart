@@ -203,7 +203,11 @@ class Tire {
       compatibleCars: (json['compatible_cars'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList(),
-      imageAsset: json['image_asset'] as String? ?? 'assets/images/tires/michelin_pilot_sport_5.webp',
+      imageAsset: resolveImageAsset(
+        explicit: json['image_asset'] as String?,
+        brand: json['brand'] as String?,
+        model: json['model'] as String?,
+      ),
     );
   }
 
@@ -298,12 +302,82 @@ class Tire {
       warrantyMiles: (map['warranty_miles'] as num?)?.toInt(),
       description: map['description'] as String?,
       compatibleCars: cars,
-      imageAsset: map['image_asset'] as String? ?? 'assets/images/tires/michelin_pilot_sport_5.webp',
+      imageAsset: resolveImageAsset(
+        explicit: map['image_asset'] as String?,
+        brand: map['brand'] as String?,
+        model: map['model'] as String?,
+      ),
     );
   }
 
   static List<Tire> fromJsonList(String jsonString) {
     final List<dynamic> list = jsonDecode(jsonString) as List<dynamic>;
     return list.map((item) => Tire.fromJson(item as Map<String, dynamic>)).toList();
+  }
+
+  /// Automatically matches tire brand and model to corresponding assets in `assets/images/tires/`
+  static String resolveImageAsset({String? explicit, String? brand, String? model}) {
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    final b = (brand ?? '').toLowerCase();
+    final m = (model ?? '').toLowerCase();
+
+    if (b.contains('michelin')) {
+      if (m.contains('cup 2') || m.contains('cup2')) {
+        return 'assets/images/tires/michelin_pilot_sport_cup_2.webp';
+      }
+      if (m.contains('all season') || m.contains('as4') || m.contains('as 4')) {
+        return 'assets/images/tires/michelin_pilot_sport_all_season_4.webp';
+      }
+      if (m.contains('crossclimate 2') || m.contains('crossclimate2')) {
+        return 'assets/images/tires/michelin_crossclimate_2_suv.webp';
+      }
+      if (m.contains('crossclimate')) {
+        return 'assets/images/tires/michelin_crossclimate_suv.webp';
+      }
+      if (m.contains('e.primacy') || m.contains('e primacy') || m.contains('eprimacy')) {
+        return 'assets/images/tires/michelin_e_primacy.webp';
+      }
+      if (m.contains('primacy 4+') || m.contains('primacy 4 plus')) {
+        return 'assets/images/tires/michelin_primacy_4_plus.webp';
+      }
+      if (m.contains('primacy')) {
+        return 'assets/images/tires/michelin_primacy4.webp';
+      }
+      return 'assets/images/tires/michelin_pilot_sport_5.webp';
+    }
+    if (b.contains('continental')) {
+      if (m.contains('sportcontact 7') || m.contains('sc7') || m.contains('sport contact 7')) {
+        return 'assets/images/tires/continental_sportcontact_7.webp';
+      }
+      if (m.contains('dws06') || m.contains('extremecontact dws')) {
+        return 'assets/images/tires/continental_extremecontact_dws06_plus.webp';
+      }
+      if (m.contains('sport 02') || m.contains('extremecontact sport')) {
+        return 'assets/images/tires/continental_extremecontact_sport_02.webp';
+      }
+      if (m.contains('crosscontact') || m.contains('lx25')) {
+        return 'assets/images/tires/continental_crosscontact_lx25.webp';
+      }
+      if (m.contains('terraincontact') || m.contains('terrain contact')) {
+        return 'assets/images/tires/continental_terraincontact_at.webp';
+      }
+      if (m.contains('ultracontact') || m.contains('uc7') || m.contains('ultra contact')) {
+        return 'assets/images/tires/continental_ultracontact_uc7.webp';
+      }
+      if (m.contains('vikingcontact') || m.contains('viking contact')) {
+        return 'assets/images/tires/continental_vikingcontact_7.webp';
+      }
+      return 'assets/images/tires/continental_sportcontact_7.webp';
+    }
+    if (b.contains('goodyear')) {
+      if (m.contains('asymmetric 6') || m.contains('asym 6') || m.contains('asymmetric')) {
+        return 'assets/images/tires/goodyear_eagle_f1_asymmetric_6.webp';
+      }
+      return 'assets/images/tires/goodyear_eagle_f1.png';
+    }
+    if (b.contains('pirelli')) {
+      return 'assets/images/tires/pirelli_p_zero_pz4.webp';
+    }
+    return 'assets/images/tires/michelin_pilot_sport_5.webp';
   }
 }

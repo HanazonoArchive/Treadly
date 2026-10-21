@@ -1,11 +1,11 @@
 {
-    "name": "flutter_app",
-    "short_name": "flutter_app",
+    "name": "Treadly",
+    "short_name": "Treadly",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#111625",
+    "theme_color": "#FF6B00",
+    "description": "Treadly - Premium Tire Fitting, Live Technician Inquiries & Shop Management Platform",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

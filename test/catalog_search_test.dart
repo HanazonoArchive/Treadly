@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_app/models/tire.dart';
+import 'package:treadly/models/tire.dart';
 
 void main() {
   test('assets/data/tires.json loads 100+ tires with rich compatible cars', () {
