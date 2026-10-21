@@ -173,7 +173,7 @@ class CartController extends GetxController {
       'Added to Cart',
       '${isSetOfFour ? 'Set of 4' : 'Single'} ${tire.fullName} added ($quantity item${quantity > 1 ? 's' : ''})',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF141B2D),
+      backgroundColor: AppTheme.surfaceElevated,
       colorText: Colors.white,
       icon: const Icon(Icons.check_circle_rounded, color: AppTheme.accentOrange, size: 24),
       mainButton: TextButton(
@@ -347,7 +347,7 @@ class CartController extends GetxController {
       // 6. Show Order Confirmed Dialog
       Get.dialog(
         AlertDialog(
-          backgroundColor: const Color(0xFF141B2D),
+          backgroundColor: AppTheme.surfaceElevated,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: const BorderSide(color: AppTheme.borderDark, width: 1.2),

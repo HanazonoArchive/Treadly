@@ -43,7 +43,7 @@ class SearchCatalogController extends GetxController {
   final Rx<int?> selectedRim = Rx<int?>(null);
   final RxBool inStockOnly = false.obs;
 
-  // Recent search queries for Shopee-style search input screen
+  // Recent search queries for search input screen
   final RxList<String> recentSearches = <String>[
     'Michelin Pilot Sport 5',
     '225/45 R18',
@@ -51,7 +51,41 @@ class SearchCatalogController extends GetxController {
     'Summer tires',
   ].obs;
 
+  static const List<String> popularSearches = [
+    'Michelin Pilot Sport 5',
+    '225/45 R18',
+    '245/40 R18',
+    'Bridgestone Potenza',
+    'Pirelli P Zero',
+    'Continental Extreme Contact',
+    'Summer tires',
+    'Run-Flat',
+    'Set of 4',
+  ];
+
   final TextEditingController textController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
+
+  void focusSearchField() {
+    searchFocusNode.requestFocus();
+  }
+
+  void selectKeyword(String keyword) {
+    textController.text = keyword;
+    textController.selection = TextSelection.fromPosition(
+      TextPosition(offset: keyword.length),
+    );
+    searchQuery.value = keyword;
+    addRecentSearch(keyword);
+  }
+
+  void submitSearch(String query) {
+    final trimmed = query.trim();
+    searchQuery.value = trimmed;
+    if (trimmed.isNotEmpty) {
+      addRecentSearch(trimmed);
+    }
+  }
 
   void addRecentSearch(String query) {
     final trimmed = query.trim();
@@ -80,6 +114,7 @@ class SearchCatalogController extends GetxController {
   @override
   void onClose() {
     textController.dispose();
+    searchFocusNode.dispose();
     super.onClose();
   }
 

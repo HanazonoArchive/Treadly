@@ -55,29 +55,29 @@ class _HelpCenterSheetContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildFaqItem(
-                  question: 'How do I determine the correct tire size?',
+                  question: 'How does tire inquiry and reservation work?',
                   answer:
-                      'Check the tire placard inside your driver door jamb or look at your tire sidewall. You will see a standard code like 225/45 R18 (225mm width, 45% aspect ratio, 18-inch rim).',
+                      'Find your tire in the catalog, choose your quantity or bundle, and submit an inquiry. Our shop team will review stock in real time. Once confirmed, your tires are reserved and prepped for your drive-in visit.',
                 ),
                 _buildFaqItem(
-                  question: 'Does Treadly offer professional installation?',
+                  question: 'When do I pay for my tires and installation?',
                   answer:
-                      'Yes! Select "Partner Installer Shop" at checkout. Your tires will ship directly to a verified service shop near you, with mounting and precision balancing included.',
+                      'All payments are handled in-person directly at the shop when you arrive for your scheduled installation. No advance online payment is required.',
                 ),
                 _buildFaqItem(
-                  question: 'What is Treadly\'s return and fitment policy?',
+                  question: 'How do I locate the shop?',
                   answer:
-                      'We offer a 30-day fitment guarantee for unmounted tires in original condition. If you order the wrong size, contact us for a hassle-free swap or refund.',
+                      'Under your "Inquiries" tab, tap the "Location" button on any active inquiry to view our shop branch address, contact numbers, and interactive map directions.',
                 ),
                 _buildFaqItem(
-                  question: 'How do Vouchers and 5% Reward Points work?',
+                  question: 'How do I check my vehicle tire size?',
                   answer:
-                      'Vouchers deduct an instant discount from your checkout total. Plus, every completed order deposits 5% of your item purchase amount as Reward Points in your Treadly Wallet.',
+                      'Check the placard sticker on the driver-side door jamb, your car owner\'s manual, or read the embossed numbers on your current tire sidewall (e.g. 225/45 R18).',
                 ),
                 _buildFaqItem(
-                  question: 'How long does delivery take?',
+                  question: 'Can I cancel my inquiry or reservation?',
                   answer:
-                      'Metro deliveries typically arrive in 1 to 2 business days. Regional shipping takes 3 to 5 business days. You can track real-time dispatch progress under "My Purchases".',
+                      'Yes, you can tap "Cancel Inquiry" in the Inquiries tab at any time before your drive-in visit with zero cancellation fees.',
                 ),
                 const SizedBox(height: 24),
               ],

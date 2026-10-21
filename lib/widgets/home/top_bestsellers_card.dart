@@ -38,7 +38,7 @@ class TopBestsellersCard extends StatelessWidget {
           height: 170,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF172136), Color(0xFF101625)],
+              colors: [Color(0xFF1D222E), Color(0xFF13161E)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

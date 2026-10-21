@@ -141,4 +141,17 @@ class TireRepository {
       debugPrint('[TireRepository] Firestore stock decrement error: $e');
     }
   }
+
+  /// Updates tire details (stock, specs, price) in Firestore
+  Future<void> updateTire(Tire tire) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('tires')
+          .doc(tire.id)
+          .set(tire.toJson(), SetOptions(merge: true));
+      debugPrint('[TireRepository] Successfully updated tire ${tire.id} in Firestore.');
+    } catch (e) {
+      debugPrint('[TireRepository] Error updating tire ${tire.id}: $e');
+    }
+  }
 }

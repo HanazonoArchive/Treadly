@@ -93,7 +93,7 @@ class _SearchInputViewState extends State<SearchInputView> {
             // Top Bar: Return Button + Search Box + Search Text Button
             Container(
               decoration: const BoxDecoration(
-                color: Color(0xFF101625),
+                color: AppTheme.headerDark,
                 border: Border(
                   bottom: BorderSide(color: AppTheme.borderDark, width: 1.5),
                 ),
@@ -119,7 +119,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                     child: Container(
                       height: 42,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141B2D),
+                        color: AppTheme.inputBg,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: AppTheme.accentOrange.withValues(alpha: 0.6),
@@ -257,7 +257,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                             children: recents.map((keyword) {
                               return Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF141B2D),
+                                  color: AppTheme.surfaceDark,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: AppTheme.borderDark),
                                 ),
@@ -325,10 +325,10 @@ class _SearchInputViewState extends State<SearchInputView> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF141B2D),
+                              color: AppTheme.surfaceDark,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
+                                color: AppTheme.borderDark,
                               ),
                             ),
                             child: Row(

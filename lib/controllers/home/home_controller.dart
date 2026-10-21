@@ -81,4 +81,19 @@ class HomeController extends GetxController {
       );
     }
   }
+
+  /// Updates tire in local reactive lists and persists changes to Firestore
+  Future<void> updateTire(Tire updatedTire) async {
+    final idx = tires.indexWhere((t) => t.id == updatedTire.id);
+    if (idx != -1) {
+      tires[idx] = updatedTire;
+      tires.refresh();
+    }
+    final bestIdx = topBestsellers.indexWhere((t) => t.id == updatedTire.id);
+    if (bestIdx != -1) {
+      topBestsellers[bestIdx] = updatedTire;
+      topBestsellers.refresh();
+    }
+    await TireRepository.instance.updateTire(updatedTire);
+  }
 }

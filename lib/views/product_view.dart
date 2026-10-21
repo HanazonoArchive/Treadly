@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../controllers/cart/cart_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/inquiry/inquiry_controller.dart';
+import '../controllers/navigation_controller.dart';
 import '../core/app_theme.dart';
 import '../models/tire.dart';
 import '../services/navigation_service.dart';
+import 'auth/sign_in_view.dart';
 
 /// Product Details View: Simple, clean, usable showcase page for a single tire.
+/// Features Real-time Nearest Shop Availability & Inquire / Reserve action.
 class ProductView extends StatefulWidget {
   final Tire? tire;
   final bool initialSetOfFour;
@@ -112,7 +116,7 @@ class _ProductViewState extends State<ProductView> {
                 gradient: const RadialGradient(
                   center: Alignment.center,
                   radius: 0.8,
-                  colors: [Color(0xFF1E283F), Color(0xFF101625)],
+                  colors: [Color(0xFF222836), Color(0xFF11141A)],
                 ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: AppTheme.borderDark),
@@ -283,7 +287,7 @@ class _ProductViewState extends State<ProductView> {
                       ],
                       const Spacer(),
                       Text(
-                        _tire.isOutOfStock ? 'Out of stock' : '${_tire.stock} in stock',
+                        _tire.isOutOfStock ? 'Out of stock' : '${_tire.stock} available in shop',
                         style: TextStyle(
                           color: _tire.isOutOfStock ? Colors.redAccent : const Color(0xFF10B981),
                           fontSize: 12,
@@ -292,12 +296,12 @@ class _ProductViewState extends State<ProductView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
                   // Set Bundle Selector Toggle
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF141B2D),
+                      color: AppTheme.surfaceDark,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppTheme.borderDark),
                     ),
@@ -468,7 +472,7 @@ class _ProductViewState extends State<ProductView> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF141B2D),
+                            color: AppTheme.surfaceDark,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: AppTheme.borderDark),
                           ),
@@ -490,7 +494,7 @@ class _ProductViewState extends State<ProductView> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         decoration: BoxDecoration(
-          color: const Color(0xFF101625),
+          color: AppTheme.headerDark,
           border: Border(top: BorderSide(color: AppTheme.borderDark)),
         ),
         child: SafeArea(
@@ -499,7 +503,7 @@ class _ProductViewState extends State<ProductView> {
               // Quantity Counter
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF141B2D),
+                  color: AppTheme.surfaceDark,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppTheme.borderDark),
                 ),
@@ -529,11 +533,11 @@ class _ProductViewState extends State<ProductView> {
               ),
               const SizedBox(width: 14),
 
-              // Add to Cart Button
+              // Inquire Button
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _tire.isOutOfStock ? const Color(0xFF232D42) : AppTheme.accentOrange,
+                    backgroundColor: _tire.isOutOfStock ? AppTheme.surfaceElevated : AppTheme.accentOrange,
                     foregroundColor: _tire.isOutOfStock ? const Color(0xFF64748B) : Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -541,43 +545,31 @@ class _ProductViewState extends State<ProductView> {
                   onPressed: _tire.isOutOfStock
                       ? null
                       : () {
-                          final cartController = Get.isRegistered<CartController>()
-                              ? Get.find<CartController>()
-                              : Get.put(CartController(), permanent: true);
-
-                          // 1. Close product details page first using Navigator
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          } else {
-                            NavigationService.goBackOrHome(context, targetTab: 0);
+                          if (Get.isRegistered<AuthController>()) {
+                            final auth = Get.find<AuthController>();
+                            if (auth.isGuest.value || auth.userId.value.isEmpty) {
+                              Get.to(() => const SignInView());
+                              Get.snackbar(
+                                'Sign In Required',
+                                'Please sign in to your account to inquire about this tire.',
+                                snackPosition: SnackPosition.BOTTOM,
+                                backgroundColor: AppTheme.surfaceDark,
+                                colorText: AppTheme.accentOrange,
+                                margin: const EdgeInsets.all(16),
+                              );
+                              return;
+                            }
                           }
-
-                          // 2. Add to cart (triggers bottom navigation bar bounce and confirmation)
-                          cartController.addToCart(
-                            tire: _tire,
-                            quantity: _quantity,
-                            isSetOfFour: _isSetOfFour,
-                          );
+                          _showInquirySheet(context);
                         },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_tire.isOutOfStock)
-                        const Text(
-                          'OUT OF STOCK',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.5),
-                        )
-                      else ...[
-                        const Text(
-                          'Add to Cart • ',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-                        ),
-                        Text(
-                          _formatPrice(_totalPrice),
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-                        ),
-                      ],
-                    ],
+                  child: Text(
+                    _tire.isOutOfStock ? 'OUT OF STOCK' : 'Inquire',
+                    style: const TextStyle(
+                      fontFamily: 'Outfit',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
@@ -588,11 +580,334 @@ class _ProductViewState extends State<ProductView> {
     );
   }
 
+
+  void _showInquirySheet(BuildContext context) {
+    final inquiryCtrl = Get.isRegistered<InquiryController>()
+        ? Get.find<InquiryController>()
+        : Get.put(InquiryController(), permanent: true);
+
+    final notesController = TextEditingController();
+
+    // Price calculations for the breakdown
+    final int tireCount = _isSetOfFour ? _quantity * 4 : _quantity;
+    final double originalTotal = _tire.priceInPhp * tireCount;
+    final double discountAmount = _isSetOfFour ? (originalTotal * 0.10) : 0.0;
+    final double finalPrice = _totalPrice;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            top: 14,
+            left: 20,
+            right: 20,
+          ),
+          decoration: const BoxDecoration(
+            color: AppTheme.surfaceElevated,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(
+              top: BorderSide(color: AppTheme.borderDark, width: 1.5),
+              left: BorderSide(color: AppTheme.borderDark, width: 1),
+              right: BorderSide(color: AppTheme.borderDark, width: 1),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF334155),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Expanded Tire Details (gives full room for the tire name and specs)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        color: AppTheme.surfaceDark,
+                        padding: const EdgeInsets.all(4),
+                        child: Image.asset(
+                          _tire.imageAsset,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.album_rounded,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _tire.fullName,
+                            style: const TextStyle(
+                              fontFamily: 'Outfit',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_tire.size} • ${_tire.category}',
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _isSetOfFour
+                                  ? AppTheme.accentOrange.withValues(alpha: 0.15)
+                                  : Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: _isSetOfFour
+                                    ? AppTheme.accentOrange.withValues(alpha: 0.4)
+                                    : AppTheme.borderDark,
+                              ),
+                            ),
+                            child: Text(
+                              _isSetOfFour
+                                  ? 'Set of 4 Tires (${_quantity * 4} pcs) • -10% Applied'
+                                  : '$_quantity Single Tire${_quantity > 1 ? 's' : ''}',
+                              style: TextStyle(
+                                color: _isSetOfFour ? AppTheme.accentOrange : const Color(0xFFCBD5E1),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Price Breakdown Container (placed underneath tire details)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceDark,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.borderDark),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Original Price ($tireCount × ${_formatPrice(_tire.priceInPhp)})',
+                            style: const TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            _formatPrice(originalTotal),
+                            style: TextStyle(
+                              fontFamily: 'Outfit',
+                              color: _isSetOfFour ? const Color(0xFF94A3B8) : Colors.white,
+                              fontSize: 13,
+                              fontWeight: _isSetOfFour ? FontWeight.normal : FontWeight.bold,
+                              decoration: _isSetOfFour ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_isSetOfFour) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Set of 4 Bundle Discount (-10%)',
+                              style: TextStyle(
+                                color: Color(0xFF10B981),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '-${_formatPrice(discountAmount)}',
+                              style: const TextStyle(
+                                fontFamily: 'Outfit',
+                                color: Color(0xFF10B981),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Divider(color: AppTheme.borderDark, height: 1),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Final Price',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _formatPrice(finalPrice),
+                            style: const TextStyle(
+                              fontFamily: 'Outfit',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.accentOrange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Note Field (Replaced 'Special Request (Optional)')
+                const Text(
+                  'Note',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: notesController,
+                  maxLines: 2,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Add a note or inquiry details for the shop...',
+                    hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                    filled: true,
+                    fillColor: AppTheme.inputBg,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.borderDark),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.borderDark),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.accentOrange),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Simple Submit Button (No icon)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentOrange,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () async {
+                      if (Get.isRegistered<AuthController>()) {
+                        final auth = Get.find<AuthController>();
+                        if (auth.isGuest.value || auth.userId.value.isEmpty) {
+                          Navigator.pop(ctx);
+                          Get.to(() => const SignInView());
+                          Get.snackbar(
+                            'Sign In Required',
+                            'Please sign in to submit your inquiry.',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: AppTheme.surfaceDark,
+                            colorText: AppTheme.accentOrange,
+                            margin: const EdgeInsets.all(16),
+                          );
+                          return;
+                        }
+                      }
+
+                      Navigator.pop(ctx); // Close sheet
+
+                      await inquiryCtrl.createInquiry(
+                        tire: _tire,
+                        quantity: _quantity,
+                        isSetOfFour: _isSetOfFour,
+                        branch: inquiryCtrl.activeBranch.value,
+                        vehicleModel: '',
+                        preferredDate: '',
+                        notes: notesController.text,
+                      );
+
+                      if (context.mounted && Navigator.canPop(context)) {
+                        Navigator.pop(context); // Close product details page
+                      }
+                      if (Get.isRegistered<NavigationController>()) {
+                        Get.find<NavigationController>().changeTab(0); // Return to home page (Tab 0)
+                      }
+                    },
+                    child: const Text(
+                      'Submit',
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSpecItem(String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF141B2D),
+        color: AppTheme.surfaceDark,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.borderDark),
       ),

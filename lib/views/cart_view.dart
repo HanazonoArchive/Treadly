@@ -24,7 +24,7 @@ class CartView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
               decoration: const BoxDecoration(
-                color: Color(0xFF101625),
+                color: AppTheme.headerDark,
                 border: Border(
                   bottom: BorderSide(color: AppTheme.borderDark, width: 1.5),
                 ),
@@ -137,7 +137,7 @@ class CartView extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141B2D),
+                        color: AppTheme.surfaceDark,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppTheme.borderDark),
                       ),
@@ -151,7 +151,7 @@ class CartView extends StatelessWidget {
                               width: 72,
                               height: 72,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E283F),
+                                color: AppTheme.surfaceElevated,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.all(6),
@@ -238,7 +238,7 @@ class CartView extends StatelessWidget {
                                     Container(
                                       height: 32,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E283F),
+                                        color: AppTheme.surfaceDark,
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(color: AppTheme.borderDark),
                                       ),
@@ -295,7 +295,7 @@ class CartView extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF101625),
+                  color: AppTheme.headerDark,
                   border: Border(
                     top: BorderSide(color: AppTheme.borderDark, width: 1.5),
                   ),

@@ -60,7 +60,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
 
         return Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF141B2D),
+            color: AppTheme.surfaceDark,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppTheme.borderDark),
           ),

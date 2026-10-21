@@ -206,26 +206,6 @@ class SettingsView extends StatelessWidget {
                   onChanged: (val) => controller.pushNotificationsEnabled.value = val,
                 ),
               ),
-              const Divider(color: AppTheme.borderDark, height: 1),
-              Obx(
-                () => _buildSwitchTile(
-                  icon: LucideIcons.truck,
-                  title: 'Order & Delivery Updates',
-                  subtitle: 'Track tire shipping and arrival',
-                  value: controller.orderUpdatesEnabled.value,
-                  onChanged: (val) => controller.orderUpdatesEnabled.value = val,
-                ),
-              ),
-              const Divider(color: AppTheme.borderDark, height: 1),
-              Obx(
-                () => _buildSwitchTile(
-                  icon: LucideIcons.sparkles,
-                  title: 'Exclusive Deals & Vouchers',
-                  subtitle: 'Get notified of flash discounts',
-                  value: controller.promoAlertsEnabled.value,
-                  onChanged: (val) => controller.promoAlertsEnabled.value = val,
-                ),
-              ),
             ],
           ),
         ),

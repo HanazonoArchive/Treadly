@@ -14,7 +14,7 @@ class HomeActionGrid extends StatelessWidget {
     _ActionItemData(
       label: 'Flash Sale',
       icon: Icons.flash_on_rounded,
-      color: Color(0xFFEF4444),
+      color: AppTheme.statusCancelled,
     ),
     _ActionItemData(
       label: 'Deals',
@@ -24,12 +24,12 @@ class HomeActionGrid extends StatelessWidget {
     _ActionItemData(
       label: 'Save Big',
       icon: Icons.savings_rounded,
-      color: Color(0xFF10B981),
+      color: AppTheme.statusCompleted,
     ),
     _ActionItemData(
       label: 'Set of 4',
       icon: Icons.directions_car_rounded,
-      color: Color(0xFF00E5FF),
+      color: AppTheme.statusResponded,
     ),
   ];
 
@@ -59,7 +59,7 @@ class HomeActionGrid extends StatelessWidget {
                     Container(
                       height: 56,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141B2D),
+                        color: AppTheme.surfaceDark,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: AppTheme.borderDark,

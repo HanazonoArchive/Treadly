@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_theme.dart';
 import '../services/firebase_sync_service.dart';
 import 'cart/cart_controller.dart';
+import 'inquiry/inquiry_controller.dart';
 import 'sync_controller.dart';
 
 /// AuthController manages user session state (Guest vs Authenticated).
@@ -18,6 +19,9 @@ class AuthController extends GetxController {
   final RxString userId = ''.obs;
   final RxString avatarUrl = ''.obs;
   final RxBool isLoading = false.obs;
+
+  /// Returns true if the authenticated user has an official shop email (@treadly.com)
+  bool get isStaff => userEmail.value.trim().toLowerCase().endsWith('@treadly.com');
 
   @override
   void onInit() {
@@ -54,11 +58,11 @@ class AuthController extends GetxController {
     required String avatar,
     bool persist = true,
   }) {
-    isGuest.value = false;
-    userId.value = newUserId;
     userEmail.value = email;
-    avatarUrl.value = avatar;
     displayName.value = name;
+    avatarUrl.value = avatar;
+    userId.value = newUserId;
+    isGuest.value = false;
 
     if (persist) {
       _persistSession(newUserId, email, name, avatar);
@@ -74,6 +78,11 @@ class AuthController extends GetxController {
       Get.find<CartController>().syncWithUser(newUserId);
     }
 
+    // Sync inquiries for the newly active session (especially staff portal)
+    if (Get.isRegistered<InquiryController>()) {
+      Get.find<InquiryController>().onUserSessionChanged();
+    }
+
     // Ensure profile document is maintained in Firestore
     FirebaseSyncService.instance.syncProfile(
       userId: newUserId,
@@ -81,6 +90,38 @@ class AuthController extends GetxController {
       email: email,
       avatarUrl: avatarUrl.value,
     );
+  }
+
+  /// Updates display name and persists to local storage and Firestore
+  Future<void> updateDisplayName(String newName) async {
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) return;
+    displayName.value = trimmed;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_display_name', trimmed);
+      if (isStaff) {
+        await prefs.setString('latest_staff_name', trimmed);
+        await prefs.setString('staff_display_name', trimmed);
+      }
+    } catch (_) {}
+    if (userId.value.isNotEmpty) {
+      try {
+        FirebaseSyncService.instance.syncProfile(
+          userId: userId.value,
+          name: trimmed,
+          email: userEmail.value,
+          avatarUrl: avatarUrl.value,
+        );
+      } catch (_) {}
+    }
+    if (isStaff && Get.isRegistered<InquiryController>()) {
+      final staffId = userId.value.isNotEmpty ? userId.value : userEmail.value;
+      Get.find<InquiryController>().updateStaffDisplayName(
+        staffId: staffId,
+        newDisplayName: trimmed,
+      );
+    }
   }
 
   Future<void> _persistSession(String uid, String email, String name, String avatar) async {
@@ -128,6 +169,16 @@ class AuthController extends GetxController {
           name: name,
           avatar: avatar,
         );
+
+        if (cleanEmail.endsWith('@treadly.com') && name.isNotEmpty && name.toLowerCase() != 'staff') {
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('latest_staff_name', name);
+          } catch (_) {}
+          if (Get.isRegistered<InquiryController>()) {
+            Get.find<InquiryController>().activeStaffDisplayName.value = name;
+          }
+        }
 
         isLoading.value = false;
         Get.snackbar(
@@ -252,6 +303,11 @@ class AuthController extends GetxController {
     // Reset shopping cart for guest session
     if (Get.isRegistered<CartController>()) {
       Get.find<CartController>().clearCart();
+    }
+
+    // Reset inquiries on logout so customer info never lingers on the app
+    if (Get.isRegistered<InquiryController>()) {
+      await Get.find<InquiryController>().clearOnSignOut();
     }
 
     Get.snackbar(
