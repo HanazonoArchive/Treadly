@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/app_theme.dart';
 import '../../models/inquiry.dart';
 import '../../models/shop_branch.dart';
 import '../../models/tire.dart';
@@ -675,6 +676,13 @@ class InquiryController extends GetxController {
     final index = inquiries.indexWhere((i) => i.id == inquiryId);
     if (index >= 0) {
       final inq = inquiries[index];
+
+      // Rule: Inquiries in completed state cannot be cancelled
+      if (inq.status == InquiryStatus.completed && newStatus == InquiryStatus.cancelled) {
+        debugPrint('[InquiryController] Blocked attempt to cancel completed inquiry #$inquiryId');
+        return;
+      }
+
       String? assignedId = inq.assignedStaffId;
       String? assignedName = inq.assignedStaffName;
       if (Get.isRegistered<AuthController>()) {
@@ -871,6 +879,17 @@ class InquiryController extends GetxController {
   }
 
   Future<void> cancelInquiry(String inquiryId) async {
+    final inq = inquiries.firstWhereOrNull((i) => i.id == inquiryId);
+    if (inq != null && inq.status == InquiryStatus.completed) {
+      Get.snackbar(
+        'Action Prohibited',
+        'Completed inquiries cannot be cancelled.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppTheme.surfaceElevated,
+        colorText: Colors.white,
+      );
+      return;
+    }
     await updateInquiryStatus(inquiryId, InquiryStatus.cancelled);
   }
 

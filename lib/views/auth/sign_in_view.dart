@@ -78,7 +78,7 @@ class _SignInViewState extends State<SignInView> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Sign in to access your wallet, points, and saved vouchers.',
+                      'Sign in to inquire, chat with technicians, and track your reservations.',
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                     ),
                     const SizedBox(height: 32),

@@ -325,7 +325,7 @@ class SettingsView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Permanently remove your account and all associated purchase history and saved vouchers.',
+            'Permanently remove your account and all associated inquiry history.',
             style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 16),

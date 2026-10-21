@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// Universal Tire Model for Treadly Catalog & Cart
+/// Universal Tire Model for Treadly Catalog & Inquiries
 class Tire {
   final String id;
   final String brand;

@@ -515,107 +515,132 @@ class _InquiriesViewState extends State<InquiriesView> {
                       ],
                     ),
                   ),
-                ),
-
-                // Right side: Cancel Inquiry Button
-                GestureDetector(
-                  onTap: () {
-                    Get.dialog(
-                      Dialog(
-                        backgroundColor: AppTheme.surfaceElevated,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: AppTheme.borderDark),
-                        ),
-                        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'Cancel Inquiry?',
-                                style: TextStyle(
-                                  fontFamily: 'Outfit',
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Are you sure you want to cancel inquiry #${item.id}?',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Color(0xFF94A3B8),
-                                  fontSize: 13,
-                                  height: 1.45,
-                                ),
-                              ),
-                              const SizedBox(height: 22),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextButton(
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: const Color(0xFF94A3B8),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      onPressed: () => Get.back(),
-                                      child: const Text(
-                                        'Keep Inquiry',
-                                        style: TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFEF4444),
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        controller.cancelInquiry(item.id);
-                                        Get.back();
-                                      },
-                                      child: const Text(
-                                        'Yes, Cancel',
-                                        style: TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                ),                // Right side: Completed badge (non-cancellable) or Cancel Inquiry Button
+                if (item.status == InquiryStatus.completed)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.statusCompleted.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.statusCompleted.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: AppTheme.statusCompleted, size: 14),
+                        SizedBox(width: 5),
+                        Text(
+                          'Completed',
+                          style: TextStyle(
+                            color: AppTheme.statusCompleted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
+                      ],
+                    ),
+                  )
+                else
+                  GestureDetector(
+                    onTap: () {
+                      Get.dialog(
+                        Dialog(
+                          backgroundColor: AppTheme.surfaceElevated,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: const BorderSide(color: AppTheme.borderDark),
+                          ),
+                          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Cancel Inquiry?',
+                                  style: TextStyle(
+                                    fontFamily: 'Outfit',
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Are you sure you want to cancel inquiry #${item.id}?',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 13,
+                                    height: 1.45,
+                                  ),
+                                ),
+                                const SizedBox(height: 22),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextButton(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: const Color(0xFF94A3B8),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                        onPressed: () => Get.back(),
+                                        child: const Text(
+                                          'Keep Inquiry',
+                                          style: TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.statusCancelled,
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          controller.cancelInquiry(item.id);
+                                          Get.back();
+                                        },
+                                        child: const Text(
+                                          'Yes, Cancel',
+                                          style: TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Cancel Inquiry',
+                      style: TextStyle(
+                        color: AppTheme.statusCancelled,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                    );
-                  },
-                  child: const Text(
-                    'Cancel Inquiry',
-                    style: TextStyle(
-                      color: Color(0xFFEF4444),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
               ],
             ),
         ],

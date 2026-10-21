@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/app_theme.dart';
 import '../services/firebase_sync_service.dart';
-import 'cart/cart_controller.dart';
 import 'inquiry/inquiry_controller.dart';
 import 'sync_controller.dart';
 
@@ -68,14 +67,9 @@ class AuthController extends GetxController {
       _persistSession(newUserId, email, name, avatar);
     }
 
-    // Sync latest user wallet & vouchers from Firestore
+    // Sync latest user session from Firestore
     if (Get.isRegistered<SyncController>()) {
       Get.find<SyncController>().syncUserData(newUserId);
-    }
-
-    // Sync active shopping cart from Firestore
-    if (Get.isRegistered<CartController>()) {
-      Get.find<CartController>().syncWithUser(newUserId);
     }
 
     // Sync inquiries for the newly active session (especially staff portal)
@@ -295,14 +289,9 @@ class AuthController extends GetxController {
     userId.value = '';
     avatarUrl.value = '';
 
-    // Reset local wallet, vouchers, and points back to 0!
+    // Reset local data back to initial state
     if (Get.isRegistered<SyncController>()) {
       Get.find<SyncController>().resetLocalData();
-    }
-
-    // Reset shopping cart for guest session
-    if (Get.isRegistered<CartController>()) {
-      Get.find<CartController>().clearCart();
     }
 
     // Reset inquiries on logout so customer info never lingers on the app
