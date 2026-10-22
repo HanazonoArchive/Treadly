@@ -61,7 +61,6 @@ class _SearchInputViewState extends State<SearchInputView> {
 
   void _submitSearch(String query) {
     final trimmed = query.trim();
-    if (trimmed.isEmpty) return;
 
     final searchController = Get.isRegistered<SearchCatalogController>()
         ? Get.find<SearchCatalogController>()

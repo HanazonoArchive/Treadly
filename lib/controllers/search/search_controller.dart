@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../core/app_theme.dart';
 import '../../models/tire.dart';
 import '../../services/tire_repository.dart';
+import '../../widgets/search/tire_sizing_studio_sheet.dart';
 
 enum SortOption {
   relevance,
@@ -43,6 +43,18 @@ class SearchCatalogController extends GetxController {
   final Rx<int?> selectedRim = Rx<int?>(null);
   final RxBool inStockOnly = false.obs;
 
+  /// Whether search has been explicitly submitted (allows empty search to load all tires)
+  final RxBool isSearchSubmitted = false.obs;
+
+  bool get isSearchActive =>
+      isSearchSubmitted.value ||
+      searchQuery.isNotEmpty ||
+      selectedCategory.value != 'All' ||
+      selectedWidth.value != null ||
+      selectedRatio.value != null ||
+      selectedRim.value != null ||
+      inStockOnly.value;
+
   // Recent search queries for search input screen
   final RxList<String> recentSearches = <String>[
     'Michelin Pilot Sport 5',
@@ -76,12 +88,14 @@ class SearchCatalogController extends GetxController {
       TextPosition(offset: keyword.length),
     );
     searchQuery.value = keyword;
+    isSearchSubmitted.value = true;
     addRecentSearch(keyword);
   }
 
   void submitSearch(String query) {
     final trimmed = query.trim();
     searchQuery.value = trimmed;
+    isSearchSubmitted.value = true;
     if (trimmed.isNotEmpty) {
       addRecentSearch(trimmed);
     }
@@ -135,6 +149,7 @@ class SearchCatalogController extends GetxController {
     final trimmedQuery = query.trim();
     searchQuery.value = trimmedQuery;
     textController.text = trimmedQuery;
+    isSearchSubmitted.value = true;
     if (trimmedQuery.isNotEmpty) {
       addRecentSearch(trimmedQuery);
     }
@@ -153,6 +168,7 @@ class SearchCatalogController extends GetxController {
   void clearSearchQuery({bool resetCategory = false}) {
     searchQuery.value = '';
     textController.clear();
+    isSearchSubmitted.value = false;
     if (resetCategory) {
       selectedCategory.value = 'All';
     }
@@ -180,6 +196,7 @@ class SearchCatalogController extends GetxController {
   void clearAllFilters() {
     searchQuery.value = '';
     textController.clear();
+    isSearchSubmitted.value = false;
     selectedCategory.value = 'All';
     selectedWidth.value = null;
     selectedRatio.value = null;
@@ -295,160 +312,12 @@ class SearchCatalogController extends GetxController {
     return list;
   }
 
-  /// Opens sizing filter bottom sheet
+  /// Opens interactive sizing studio & blueprint visualizer bottom sheet
   void openFilterSheet() {
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(22),
-        decoration: const BoxDecoration(
-          color: AppTheme.surfaceDark,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(
-            top: BorderSide(color: AppTheme.borderDark, width: 1.5),
-          ),
-        ),
-        child: Obx(
-          () => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Filter by Tire Sizing',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      selectedWidth.value = null;
-                      selectedRatio.value = null;
-                      selectedRim.value = null;
-                      inStockOnly.value = false;
-                      Get.back();
-                    },
-                    child: const Text(
-                      'Reset',
-                      style: TextStyle(color: AppTheme.accentOrange, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // In-Stock Only Switch
-              Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.bgDark,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: inStockOnly.value
-                        ? AppTheme.accentOrange.withValues(alpha: 0.45)
-                        : AppTheme.borderDark,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.inventory_2_outlined, color: AppTheme.accentOrange, size: 20),
-                        SizedBox(width: 10),
-                        Text(
-                          'In-Stock Tires Only',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Switch(
-                      value: inStockOnly.value,
-                      activeThumbColor: AppTheme.accentOrange,
-                      activeTrackColor: AppTheme.accentOrange.withValues(alpha: 0.3),
-                      inactiveThumbColor: AppTheme.textSecondary,
-                      inactiveTrackColor: Colors.white.withValues(alpha: 0.05),
-                      onChanged: (val) => inStockOnly.value = val,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Width selector
-              const Text('Width (mm)', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                children: [205, 215, 225, 235, 245, 265].map((w) {
-                  final isSelected = selectedWidth.value == w;
-                  return ChoiceChip(
-                    label: Text('$w'),
-                    selected: isSelected,
-                    selectedColor: AppTheme.accentOrange,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.black : Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    backgroundColor: AppTheme.bgDark,
-                    onSelected: (val) {
-                      selectedWidth.value = val ? w : null;
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-
-              // Rim size selector
-              const Text('Rim Diameter (inches)', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                children: [16, 17, 18, 19, 20].map((r) {
-                  final isSelected = selectedRim.value == r;
-                  return ChoiceChip(
-                    label: Text('$r"'),
-                    selected: isSelected,
-                    selectedColor: AppTheme.accentOrange,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.black : Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    backgroundColor: AppTheme.bgDark,
-                    onSelected: (val) {
-                      selectedRim.value = val ? r : null;
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-
-              // Apply button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentOrange,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: () => Get.back(),
-                  child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      const TireSizingStudioSheet(),
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 }

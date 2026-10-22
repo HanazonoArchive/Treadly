@@ -67,10 +67,9 @@ class SearchView extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () {
-                      final hasQuery = controller.searchQuery.value.isNotEmpty ||
-                          controller.selectedCategory.value != 'All';
-                      if (hasQuery) {
+                      if (controller.isSearchActive) {
                         controller.clearSearchQuery(resetCategory: true);
+                        controller.clearAllFilters();
                       } else {
                         if (Get.isRegistered<NavigationController>()) {
                           Get.find<NavigationController>().changeTab(0);
@@ -132,13 +131,14 @@ class SearchView extends StatelessWidget {
                             ),
                           ),
                           Obx(() {
-                            if (controller.searchQuery.value.isEmpty &&
+                            if (!controller.isSearchActive &&
                                 controller.textController.text.isEmpty) {
                               return const SizedBox.shrink();
                             }
                             return GestureDetector(
                               onTap: () {
                                 controller.clearSearchQuery(resetCategory: true);
+                                controller.clearAllFilters();
                               },
                               child: const Padding(
                                 padding: EdgeInsets.only(left: 4),
@@ -157,10 +157,7 @@ class SearchView extends StatelessWidget {
 
                   // Trailing Action: Sort button when searching; "Search" submit button when pre-search
                   Obx(() {
-                    final bool isSearchActive = controller.searchQuery.value.trim().isNotEmpty ||
-                        controller.selectedCategory.value != 'All';
-
-                    if (isSearchActive) {
+                    if (controller.isSearchActive) {
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -200,10 +197,7 @@ class SearchView extends StatelessWidget {
             // Body: Pre-Keywords OR Search Results
             Expanded(
               child: Obx(() {
-                final bool isSearchActive = controller.searchQuery.value.trim().isNotEmpty ||
-                    controller.selectedCategory.value != 'All';
-
-                if (!isSearchActive) {
+                if (!controller.isSearchActive) {
                   return _buildPreKeywordsView(controller);
                 }
 
