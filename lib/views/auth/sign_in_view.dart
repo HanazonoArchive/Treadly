@@ -78,7 +78,7 @@ class _SignInViewState extends State<SignInView> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Sign in to inquire, chat with technicians, and track your reservations.',
+                      'Sign in to submit tire inquiries, chat with store staff, and track your inquiry status.',
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                     ),
                     const SizedBox(height: 32),

@@ -106,7 +106,7 @@ class _SignUpViewState extends State<SignUpView> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Join Treadly to start earning 5% back in points on every purchase.',
+                      'Create an account to submit tire inquiries, chat directly with store staff, and manage your requests.',
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                     ),
                     const SizedBox(height: 32),
