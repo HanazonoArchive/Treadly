@@ -70,7 +70,7 @@ class AccountServicesSection extends StatelessWidget {
                     ),
                     SizedBox(height: 3),
                     Text(
-                      'Tire fitment guide, drive-in reservations & hotline',
+                      'Tire fitment guide, shop inquiries & FAQs',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 12,

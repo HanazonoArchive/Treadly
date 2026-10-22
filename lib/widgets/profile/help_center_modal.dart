@@ -43,8 +43,6 @@ class _HelpCenterSheetContent extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                _buildSupportChannels(),
-                const SizedBox(height: 20),
                 const Text(
                   'Frequently Asked Questions',
                   style: TextStyle(
@@ -102,15 +100,6 @@ class _HelpCenterSheetContent extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.accentOrange.withValues(alpha: 0.15),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(LucideIcons.lifeBuoy, color: AppTheme.accentOrange, size: 22),
-        ),
-        const SizedBox(width: 12),
         const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +114,7 @@ class _HelpCenterSheetContent extends StatelessWidget {
               ),
               SizedBox(height: 2),
               Text(
-                'Tire fitment guide & customer care',
+                'Tire fitment guide & inquiry answers',
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               ),
             ],
@@ -136,98 +125,6 @@ class _HelpCenterSheetContent extends StatelessWidget {
           icon: const Icon(LucideIcons.x, color: AppTheme.textSecondary, size: 20),
         ),
       ],
-    );
-  }
-
-  Widget _buildSupportChannels() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildChannelCard(
-            icon: LucideIcons.phoneCall,
-            title: 'Hotline',
-            subtitle: '1-800-TREADLY',
-            onTap: () => _showContactPrompt(
-              title: 'Customer Hotline',
-              detail: 'Toll-free: 1-800-TREADLY\nLandline: +63 (02) 8888-TIRE\nHours: Mon–Sun, 8:00 AM – 8:00 PM',
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildChannelCard(
-            icon: LucideIcons.messageSquare,
-            title: 'Live Chat',
-            subtitle: 'Tire Specialist',
-            onTap: () => Get.snackbar(
-              'Tire Specialist',
-              'Connecting with our fitment advisor... Average wait: < 1 min.',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppTheme.surfaceDark,
-              colorText: AppTheme.accentOrange,
-              margin: const EdgeInsets.all(16),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildChannelCard(
-            icon: LucideIcons.mail,
-            title: 'Email',
-            subtitle: 'support@treadly',
-            onTap: () => _showContactPrompt(
-              title: 'Email Customer Support',
-              detail: 'Send your inquiries to support@treadly.ph.\nOur concierge team replies within 2 hours.',
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChannelCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: AppTheme.bgDark.withValues(alpha: 0.8),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        splashColor: AppTheme.accentOrange.withValues(alpha: 0.2),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderDark),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: AppTheme.accentOrange, size: 20),
-              const SizedBox(height: 6),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -265,38 +162,6 @@ class _HelpCenterSheetContent extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showContactPrompt({required String title, required String detail}) {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
-        ),
-        content: Text(
-          detail,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14, height: 1.4),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentOrange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () => Get.back(),
-            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
