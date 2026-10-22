@@ -163,22 +163,20 @@ class TopBestsellersCard extends StatelessWidget {
                       tire.formattedPrice,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 19,
+                        fontSize: 18,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'Outfit',
                       ),
                     ),
-                    if (tire.originalPriceInPhp != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        tire.formattedOriginalPrice,
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 11,
-                          decoration: TextDecoration.lineThrough,
-                        ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      '/ pc',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ],

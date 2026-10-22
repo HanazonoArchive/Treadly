@@ -20,7 +20,7 @@ extension NearbyShopTypeExt on NearbyShopType {
       case NearbyShopType.vulcanizing:
         return 'Vulcanizing & Patch';
       case NearbyShopType.tireRetail:
-        return 'Tire Partner Bay';
+        return 'Authorized Tire Center';
     }
   }
 
@@ -183,7 +183,7 @@ class NearbyShop {
       ),
       NearbyShop(
         id: '${branch.id}-tire-1',
-        name: 'Goodyear Autocare Partner Bay',
+        name: 'Goodyear Autocare Partner Center',
         type: NearbyShopType.tireRetail,
         address: 'Highway Commercial Arcade Lot 12',
         distanceText: '1.1 km away',

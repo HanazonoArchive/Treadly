@@ -254,37 +254,15 @@ class _ProductViewState extends State<ProductView> {
                           color: Colors.white,
                         ),
                       ),
-                      if (_tire.originalPriceInPhp != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          _tire.formattedOriginalPrice,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            decoration: TextDecoration.lineThrough,
-                          ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        '/ tire',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppTheme.accentOrange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: AppTheme.accentOrange.withValues(alpha: 0.35),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            '-${_tire.discountPercentage}%',
-                            style: const TextStyle(
-                              color: AppTheme.accentOrange,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                       const Spacer(),
                       Text(
                         _tire.isOutOfStock ? 'Out of stock' : '${_tire.stock} available in shop',
@@ -295,6 +273,14 @@ class _ProductViewState extends State<ProductView> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '* Estimated price. In-store bundle deals & fitting packages available upon inquiry.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                   const SizedBox(height: 18),
 
@@ -376,15 +362,17 @@ class _ProductViewState extends State<ProductView> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.accentOrange,
+                                          color: AppTheme.accentOrange.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.4)),
                                         ),
                                         child: const Text(
-                                          '-10%',
+                                          'BUNDLE',
                                           style: TextStyle(
-                                            color: Colors.black,
+                                            color: AppTheme.accentOrange,
                                             fontSize: 9,
                                             fontWeight: FontWeight.w900,
+                                            letterSpacing: 0.5,
                                           ),
                                         ),
                                       ),
@@ -695,7 +683,7 @@ class _ProductViewState extends State<ProductView> {
                             ),
                             child: Text(
                               _isSetOfFour
-                                  ? 'Set of 4 Tires (${_quantity * 4} pcs) • -10% Applied'
+                                  ? 'Set of 4 Tires (${_quantity * 4} pcs) • Bundle Inquiry'
                                   : '$_quantity Single Tire${_quantity > 1 ? 's' : ''}',
                               style: TextStyle(
                                 color: _isSetOfFour ? AppTheme.accentOrange : const Color(0xFFCBD5E1),
@@ -725,7 +713,7 @@ class _ProductViewState extends State<ProductView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Original Price ($tireCount × ${_formatPrice(_tire.priceInPhp)})',
+                            'Estimated Subtotal ($tireCount × ${_formatPrice(_tire.priceInPhp)})',
                             style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 12,
@@ -749,7 +737,7 @@ class _ProductViewState extends State<ProductView> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Set of 4 Bundle Discount (-10%)',
+                              'Set of 4 In-Store Promo Est.',
                               style: TextStyle(
                                 color: Color(0xFF10B981),
                                 fontSize: 12,
@@ -776,7 +764,7 @@ class _ProductViewState extends State<ProductView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Final Price',
+                            'Estimated Total',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -793,6 +781,14 @@ class _ProductViewState extends State<ProductView> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '* Estimated price only. In-store quotation and final payment are confirmed at the shop counter.',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 10.5,
+                        ),
                       ),
                     ],
                   ),

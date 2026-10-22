@@ -86,29 +86,6 @@ class ProductTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accentOrange.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: AppTheme.accentOrange.withValues(alpha: 0.35),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        '-${tire.discountPercentage}%',
-                        style: const TextStyle(
-                          color: AppTheme.accentOrange,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -151,27 +128,27 @@ class ProductTile extends StatelessWidget {
                 ),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
                     tire.formattedPrice,
                     style: const TextStyle(
                       fontFamily: 'Outfit',
-                      fontSize: 16,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
                   ),
-                  if (tire.originalPriceInPhp != null) ...[
-                    const SizedBox(width: 4),
-                    Text(
-                      tire.formattedOriginalPrice,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF64748B),
-                        decoration: TextDecoration.lineThrough,
-                      ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    '/ pc',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),

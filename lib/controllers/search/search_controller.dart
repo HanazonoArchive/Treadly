@@ -220,20 +220,40 @@ class SearchCatalogController extends GetxController {
       list = list.where((t) => !t.isOutOfStock).toList();
     }
 
-    // 3. Category filters: All, Flash Sale, Deals, Save Big, Set of 4
-    if (selectedCategory.value == 'Flash Sale') {
-      list = list.where((t) => t.originalPrice != null && !t.isOutOfStock).toList();
-    } else if (selectedCategory.value == 'Deals') {
-      list = list.where((t) => t.originalPrice != null).toList();
-    } else if (selectedCategory.value == 'Save Big') {
-      list = list.where((t) => t.originalPrice != null).toList();
-      list.sort((a, b) {
-        final savingsA = (a.originalPriceInPhp ?? a.priceInPhp) - a.priceInPhp;
-        final savingsB = (b.originalPriceInPhp ?? b.priceInPhp) - b.priceInPhp;
-        return savingsB.compareTo(savingsA);
-      });
-    } else if (selectedCategory.value == 'Set of 4') {
+    // 3. Category filters: All, Set of 4, Performance, All-Season, SUV & 4x4
+    if (selectedCategory.value == 'Set of 4') {
       list = list.where((t) => t.stock >= 4).toList();
+    } else if (selectedCategory.value == 'Performance') {
+      list = list.where((t) {
+        final cat = t.category.toLowerCase();
+        final full = t.fullName.toLowerCase();
+        return cat.contains('performance') ||
+            cat.contains('sport') ||
+            cat.contains('track') ||
+            full.contains('sport') ||
+            full.contains('potenza') ||
+            full.contains('p zero');
+      }).toList();
+    } else if (selectedCategory.value == 'All-Season') {
+      list = list.where((t) {
+        final season = t.season.toLowerCase();
+        final cat = t.category.toLowerCase();
+        return season.contains('all') ||
+            cat.contains('touring') ||
+            season.contains('summer') ||
+            cat.contains('all-season');
+      }).toList();
+    } else if (selectedCategory.value == 'SUV & 4x4') {
+      list = list.where((t) {
+        final cat = t.category.toLowerCase();
+        final full = t.fullName.toLowerCase();
+        return cat.contains('suv') ||
+            cat.contains('terrain') ||
+            cat.contains('4x4') ||
+            cat.contains('truck') ||
+            full.contains('at') ||
+            full.contains('terrain');
+      }).toList();
     }
 
     // 4. Sizing specifications

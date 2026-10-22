@@ -14,7 +14,7 @@ import '../widgets/home/top_bestsellers_card.dart';
 /// 1. TREADLY Brand Wordmark
 /// 2. Search Bar with Filter
 /// 3. Top 5 Bestsellers Box (left-to-right slide with bottom-right indicator circles)
-/// 4. Fixed 4-Column Action Buttons (Flash Sale, Deals, Save Big, Set of 4)
+/// 4. Fixed 4-Column Action Buttons (Set of 4, Performance, All-Season, SUV & 4x4)
 /// 5. Consistent Rectangular Products Grid (Picture -> Name -> Price in PHP)
 class HomeFeedView extends StatelessWidget {
   const HomeFeedView({super.key});

@@ -670,7 +670,7 @@ class _InquiriesViewState extends State<InquiriesView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Original Price ($count × ${_formatCurrency(origUnit)})',
+                'Estimated Subtotal ($count × ${_formatCurrency(origUnit)})',
                 style: const TextStyle(
                   color: Color(0xFF94A3B8),
                   fontSize: 11,
@@ -694,7 +694,7 @@ class _InquiriesViewState extends State<InquiriesView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Set of 4 Bundle Discount (-10%)',
+                  'Set of 4 In-Store Promo Est.',
                   style: TextStyle(
                     color: Color(0xFF10B981),
                     fontSize: 11,
@@ -721,7 +721,7 @@ class _InquiriesViewState extends State<InquiriesView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Final Price',
+                'Estimated Total',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -759,6 +759,14 @@ class _InquiriesViewState extends State<InquiriesView> {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '* Estimated price only. In-store quotation and final payment are confirmed at the shop counter.',
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 10,
+            ),
           ),
         ],
       ),

@@ -73,18 +73,18 @@ class Tire {
     return (priceInPhp * 1.10).roundToDouble();
   }
 
-  /// Calculated discount percentage (e.g. 10%)
-  int get discountPercentage {
-    final orig = originalPriceInPhp;
-    if (orig != null && orig > priceInPhp) {
-      final diff = orig - priceInPhp;
-      return ((diff / orig) * 100).round();
-    }
-    return 10;
+  /// Formatted Estimated Price string in PHP, e.g. "Est. ₱12,320"
+  String get formattedPrice {
+    final php = priceInPhp.toInt();
+    final formatted = php.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+    return 'Est. ₱$formatted';
   }
 
-  /// Formatted Price string in PHP, e.g. "₱12,320"
-  String get formattedPrice {
+  /// Clean numeric formatted price without "Est." prefix, e.g. "₱12,320"
+  String get rawFormattedPrice {
     final php = priceInPhp.toInt();
     final formatted = php.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
@@ -93,16 +93,9 @@ class Tire {
     return '₱$formatted';
   }
 
-  /// Formatted Original Price string in PHP, e.g. "₱13,999"
-  String get formattedOriginalPrice {
-    if (originalPriceInPhp == null) return '';
-    final php = originalPriceInPhp!.toInt();
-    final formatted = php.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
-    return '₱$formatted';
-  }
+  /// Deprecated: fake discounts removed in favor of transparent estimated pricing
+  int get discountPercentage => 0;
+  String get formattedOriginalPrice => '';
 
   /// Stock status helpers
   bool get isOutOfStock => stock <= 0;

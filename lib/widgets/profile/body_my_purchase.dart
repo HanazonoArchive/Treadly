@@ -6,13 +6,12 @@ import '../../controllers/inquiry/inquiry_controller.dart';
 import '../../controllers/navigation_controller.dart';
 import '../../core/app_theme.dart';
 
-/// Clean Inquiries & Reservations Section for Driver Profile.
-/// Replaces the complex "To Ship, Received, Returns, Cancelled" e-commerce tabs
-/// with a streamlined single-shop drive-in pipeline:
-/// 1. Pending (Shop checking stock)
-/// 2. Confirmed (Stock held)
-/// 3. Ready for Visit (Prepped in bay)
-/// 4. Completed (Installed in-store)
+/// Clean Customer Inquiries Section for Driver Profile.
+/// Replaces generic e-commerce order tracking with an authentic O2O tire inquiry pipeline:
+/// 1. Inquiring (Customer inquiry submitted)
+/// 2. Responded (Shop confirmed stock and availability)
+/// 3. Completed (Customer visited store, purchased, and installed)
+/// 4. Cancelled (Inquiry closed without purchase)
 class MyPurchaseSection extends StatelessWidget {
   MyPurchaseSection({super.key});
 

@@ -16,10 +16,10 @@ class SearchView extends StatelessWidget {
 
   static const List<String> _categories = [
     'All',
-    'Flash Sale',
-    'Deals',
-    'Save Big',
     'Set of 4',
+    'Performance',
+    'All-Season',
+    'SUV & 4x4',
   ];
 
   static IconData _getSortIcon(SortOption option) {
@@ -379,7 +379,7 @@ class SearchView extends StatelessWidget {
   Widget _buildSearchResultsView(BuildContext context, SearchCatalogController controller) {
     return Column(
       children: [
-        // Category Chips (All, Flash Sale, Deals, Save Big, Set of 4) + Right Filter Button
+        // Category Chips (All, Set of 4, Performance, All-Season, SUV & 4x4) + Right Filter Button
         Container(
           color: AppTheme.headerDark,
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),

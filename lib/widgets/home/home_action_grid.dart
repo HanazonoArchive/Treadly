@@ -12,24 +12,24 @@ class HomeActionGrid extends StatelessWidget {
 
   static const List<_ActionItemData> _items = [
     _ActionItemData(
-      label: 'Flash Sale',
-      icon: Icons.flash_on_rounded,
-      color: AppTheme.statusCancelled,
-    ),
-    _ActionItemData(
-      label: 'Deals',
-      icon: Icons.local_offer_rounded,
+      label: 'Set of 4',
+      icon: Icons.directions_car_rounded,
       color: AppTheme.accentOrange,
     ),
     _ActionItemData(
-      label: 'Save Big',
-      icon: Icons.savings_rounded,
-      color: AppTheme.statusCompleted,
+      label: 'Performance',
+      icon: Icons.speed_rounded,
+      color: Color(0xFF38BDF8),
     ),
     _ActionItemData(
-      label: 'Set of 4',
-      icon: Icons.directions_car_rounded,
-      color: AppTheme.statusResponded,
+      label: 'All-Season',
+      icon: Icons.wb_sunny_rounded,
+      color: Color(0xFF10B981),
+    ),
+    _ActionItemData(
+      label: 'SUV & 4x4',
+      icon: Icons.terrain_rounded,
+      color: Color(0xFFA855F7),
     ),
   ];
 
