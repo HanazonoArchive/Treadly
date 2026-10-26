@@ -180,7 +180,9 @@ class AuthController extends GetxController {
           'Signed in as ${displayName.value}',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppTheme.surfaceDark,
-          colorText: Colors.white,
+          colorText: AppTheme.textPrimary,
+          borderColor: AppTheme.borderDark,
+          borderWidth: 1,
           margin: const EdgeInsets.all(16),
         );
         return true;
@@ -209,7 +211,9 @@ class AuthController extends GetxController {
           'Account created for $name',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppTheme.surfaceDark,
-          colorText: Colors.white,
+          colorText: AppTheme.textPrimary,
+          borderColor: AppTheme.borderDark,
+          borderWidth: 1,
           margin: const EdgeInsets.all(16),
         );
         return true;
@@ -260,7 +264,9 @@ class AuthController extends GetxController {
         'Welcome to Treadly, ${displayName.value}!',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppTheme.surfaceDark,
-        colorText: Colors.white,
+        colorText: AppTheme.textPrimary,
+        borderColor: AppTheme.borderDark,
+        borderWidth: 1,
         margin: const EdgeInsets.all(16),
       );
       return true;
@@ -304,7 +310,9 @@ class AuthController extends GetxController {
       'You are now browsing as Guest',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppTheme.surfaceDark,
-      colorText: Colors.white,
+      colorText: AppTheme.textPrimary,
+      borderColor: AppTheme.borderDark,
+      borderWidth: 1,
       margin: const EdgeInsets.all(16),
     );
   }

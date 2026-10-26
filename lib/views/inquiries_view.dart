@@ -7,21 +7,13 @@ import '../controllers/inquiry/inquiry_controller.dart';
 import '../controllers/navigation_controller.dart';
 import '../core/app_theme.dart';
 import '../models/inquiry.dart';
-import '../models/shop_branch.dart';
 import 'auth/sign_in_view.dart';
 import 'inquiry_chat_view.dart';
-import 'shop_location_view.dart';
 
-/// Inquiries & Reservations View.
-/// Features a clean header, a 3-stage visual connected progress stepper,
-/// simple location button linking to the dedicated shop map view, and inquiry cancellation.
 class InquiriesView extends StatefulWidget {
   final String initialFilter;
 
-  const InquiriesView({
-    super.key,
-    this.initialFilter = 'All',
-  });
+  const InquiriesView({super.key, this.initialFilter = 'All'});
 
   @override
   State<InquiriesView> createState() => _InquiriesViewState();
@@ -30,9 +22,10 @@ class InquiriesView extends StatefulWidget {
 class _InquiriesViewState extends State<InquiriesView> {
   static const List<String> _filters = [
     'All',
-    'Submitted',
-    'Responded',
-    'Completed',
+    'Unpaid',
+    'Placed',
+    'Confirmed',
+    'Installed',
     'Cancelled',
   ];
 
@@ -68,7 +61,6 @@ class _InquiriesViewState extends State<InquiriesView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Nav Bar matching Profile page: Back Icon Button + Title
             Container(
               color: AppTheme.bgDark,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -80,7 +72,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                           ? Get.find<NavigationController>()
                           : null;
                       if (nav != null) {
-                        nav.changeTab(0); // Return to Home
+                        nav.changeTab(0);
                       } else {
                         Get.back();
                       }
@@ -94,7 +86,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                   const SizedBox(width: 4),
                   const Expanded(
                     child: Text(
-                      'Inquiries',
+                      'Orders',
                       style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 18,
@@ -107,7 +99,6 @@ class _InquiriesViewState extends State<InquiriesView> {
               ),
             ),
 
-            // Filter Chips Bar
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
               child: Obx(() {
@@ -118,14 +109,21 @@ class _InquiriesViewState extends State<InquiriesView> {
                   child: Row(
                     children: _filters.map((filter) {
                       final isSelected = currentFilter == filter;
-                      final unreadCount = inquiryCtrl.getCategoryUnreadCount(filter, isStaff: isStaff);
+                      final unreadCount = inquiryCtrl.getCategoryUnreadCount(
+                        filter,
+                        isStaff: isStaff,
+                      );
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: GestureDetector(
-                          onTap: () => inquiryCtrl.selectedFilter.value = filter,
+                          onTap: () =>
+                              inquiryCtrl.selectedFilter.value = filter,
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppTheme.accentOrange
@@ -143,25 +141,39 @@ class _InquiriesViewState extends State<InquiriesView> {
                                 Text(
                                   filter,
                                   style: TextStyle(
-                                    color: isSelected ? Colors.black : const Color(0xFF94A3B8),
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.black
+                                        : const Color(0xFF94A3B8),
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w600,
                                     fontSize: 12,
                                   ),
                                 ),
                                 if (unreadCount > 0) ...[
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1.5,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? Colors.black : AppTheme.accentOrange,
+                                      color: isSelected
+                                          ? Colors.black
+                                          : AppTheme.accentOrange,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
                                     child: Center(
                                       child: Text(
                                         unreadCount > 9 ? '9+' : '$unreadCount',
                                         style: TextStyle(
-                                          color: isSelected ? AppTheme.accentOrange : Colors.black,
+                                          color: isSelected
+                                              ? AppTheme.accentOrange
+                                              : Colors.black,
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w900,
                                           height: 1,
@@ -181,7 +193,6 @@ class _InquiriesViewState extends State<InquiriesView> {
               }),
             ),
 
-            // Inquiries List or Empty State (with pull-to-refresh)
             Expanded(
               child: RefreshIndicator(
                 color: AppTheme.accentOrange,
@@ -191,24 +202,33 @@ class _InquiriesViewState extends State<InquiriesView> {
                 },
                 child: Obx(() {
                   final isStaff = _isCurrentStaff();
-                  final all = isStaff ? inquiryCtrl.staffInquiries : inquiryCtrl.customerInquiries;
+                  final all = isStaff
+                      ? inquiryCtrl.staffInquiries
+                      : inquiryCtrl.customerInquiries;
                   final currentFilter = inquiryCtrl.selectedFilter.value;
 
                   final filtered = all.where((inq) {
-                    if (currentFilter == 'Submitted' || currentFilter == 'Inquiring') {
+                    if (currentFilter == 'Unpaid') {
+                      return inq.status == InquiryStatus.unpaid;
+                    }
+                    if (currentFilter == 'Placed' ||
+                        currentFilter == 'Submitted' ||
+                        currentFilter == 'Inquiring') {
                       return inq.status == InquiryStatus.submitted;
                     }
-                    if (currentFilter == 'Responded') {
+                    if (currentFilter == 'Confirmed' ||
+                        currentFilter == 'Responded') {
                       return inq.status == InquiryStatus.responded;
                     }
-                    if (currentFilter == 'Completed') {
+                    if (currentFilter == 'Installed' ||
+                        currentFilter == 'Completed') {
                       return inq.status == InquiryStatus.completed;
                     }
                     if (currentFilter == 'Cancelled') {
                       return inq.status == InquiryStatus.cancelled;
                     }
-                    // 'All': shows active inquiries (Submitted, Responded, Completed), NOT Cancelled
-                    return inq.status != InquiryStatus.cancelled;
+                    return inq.status != InquiryStatus.completed &&
+                        inq.status != InquiryStatus.cancelled;
                   }).toList();
 
                   if (filtered.isEmpty) {
@@ -226,7 +246,8 @@ class _InquiriesViewState extends State<InquiriesView> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
                     itemCount: filtered.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 16),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final item = filtered[index];
                       return _buildInquiryCard(context, item, inquiryCtrl);
@@ -247,24 +268,27 @@ class _InquiriesViewState extends State<InquiriesView> {
       isGuest = Get.find<AuthController>().isGuest.value;
     }
 
-    String title = 'No Active Inquiries';
-    String subtitle = 'You have no active inquiries at the moment.';
+    String title = 'No Active Orders';
+    String subtitle = 'You have no active orders at the moment.';
 
     if (isGuest) {
-      title = 'Sign In to View Inquiries';
-      subtitle = 'Log in to track your tire inquiries, reservations, and chat updates.';
+      title = 'Sign In to View Orders';
+      subtitle = 'Log in to track your tire orders, bay reservations, and chat updates.';
+    } else if (currentFilter == 'Unpaid') {
+      title = 'No Unpaid Orders';
+      subtitle = 'You have no orders awaiting payment.';
     } else if (currentFilter == 'Cancelled') {
-      title = 'No Cancelled Inquiries';
-      subtitle = 'You have no cancelled inquiries.';
-    } else if (currentFilter == 'Completed') {
-      title = 'No Completed Inquiries';
-      subtitle = 'You have no completed reservations yet.';
-    } else if (currentFilter == 'Responded') {
-      title = 'No Responded Inquiries';
-      subtitle = 'You have no inquiries with new shop updates yet.';
-    } else if (currentFilter == 'Submitted' || currentFilter == 'Inquiring') {
-      title = 'No Submitted Inquiries';
-      subtitle = 'You have no inquiries awaiting initial shop response.';
+      title = 'No Cancelled Orders';
+      subtitle = 'You have no cancelled orders.';
+    } else if (currentFilter == 'Installed' || currentFilter == 'Completed') {
+      title = 'No Installed Orders';
+      subtitle = 'You have no completed drive-in installations yet.';
+    } else if (currentFilter == 'Confirmed' || currentFilter == 'Responded') {
+      title = 'No Confirmed Orders';
+      subtitle = 'You have no orders prepped in the workshop bay yet.';
+    } else if (currentFilter == 'Placed' || currentFilter == 'Submitted' || currentFilter == 'Inquiring') {
+      title = 'No Placed Orders';
+      subtitle = 'You have no orders awaiting initial shop confirmation.';
     }
 
     return Center(
@@ -277,7 +301,7 @@ class _InquiriesViewState extends State<InquiriesView> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: AppTheme.inputBg,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -291,7 +315,7 @@ class _InquiriesViewState extends State<InquiriesView> {
               title,
               style: const TextStyle(
                 fontFamily: 'Outfit',
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -311,12 +335,20 @@ class _InquiriesViewState extends State<InquiriesView> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.accentOrange,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: () => Get.to(() => const SignInView()),
-                child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                child: const Text(
+                  'Sign In',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ),
             ],
           ],
@@ -347,7 +379,9 @@ class _InquiriesViewState extends State<InquiriesView> {
           color: AppTheme.surfaceDark,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: hasUnread ? AppTheme.accentOrange.withValues(alpha: 0.6) : AppTheme.borderDark,
+            color: hasUnread
+                ? AppTheme.accentOrange.withValues(alpha: 0.6)
+                : AppTheme.borderDark,
             width: hasUnread ? 1.5 : 1,
           ),
         ),
@@ -355,12 +389,11 @@ class _InquiriesViewState extends State<InquiriesView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Inquiry ID + New Update Pill
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  item.id.startsWith('#') ? item.id : '#${item.id}',
+                  'Order #${item.orderId}',
                   style: const TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 12,
@@ -369,292 +402,265 @@ class _InquiriesViewState extends State<InquiriesView> {
                   ),
                 ),
                 if (hasUnread)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentOrange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.5)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(LucideIcons.messageSquare, size: 11, color: AppTheme.accentOrange),
-                        SizedBox(width: 4),
-                        Text(
-                          'New update',
-                          style: TextStyle(
-                            color: AppTheme.accentOrange,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  const Text(
+                    'NEW MESSAGE',
+                    style: TextStyle(
+                      color: AppTheme.accentOrange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 12),
 
-          // Tire Item Details Row (Tire name and specs now have full width)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: 58,
-                  height: 58,
-                  color: Colors.white.withValues(alpha: 0.03),
-                  padding: const EdgeInsets.all(4),
-                  child: Image.asset(
-                    item.tireImage,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.album_rounded,
-                      color: AppTheme.textSecondary,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    color: AppTheme.inputBg,
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset(
+                      item.tireImage,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.album_rounded,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${item.tireBrand} ${item.tireModel}',
-                      style: const TextStyle(
-                        fontFamily: 'Outfit',
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${item.tireSize} • ${item.isSetOfFour ? 'Set of 4 (${item.quantity * 4} pcs)' : '${item.quantity} Tire${item.quantity > 1 ? 's' : ''}'}',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                    if (item.notes.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Note: ${item.notes}',
+                        '${item.tireBrand} ${item.tireModel}',
                         style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 11,
-                          fontStyle: FontStyle.italic,
+                          fontFamily: 'Outfit',
+                          color: AppTheme.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${item.tireSize} • ${item.isSetOfFour ? 'Set of 4 (${item.quantity * 4} pcs)' : '${item.quantity} Tire${item.quantity > 1 ? 's' : ''}'}',
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (item.notes.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Note: ${item.notes}',
+                          style: const TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Price Breakdown (Placed above progress circles so tire title doesn't fight for space)
-          _buildPriceBreakdown(item),
-
-          // Process Stage Stepper (hidden if cancelled)
-          if (item.status != InquiryStatus.cancelled) ...[
-            _buildProcessStepper(item),
-            const SizedBox(height: 14),
-          ],
-
-          // Bottom Action Row: Location Button, Chat Button, Cancel Inquiry
-          if (item.status != InquiryStatus.cancelled)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Left side: Clean Location Button
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    final branch = ShopBranch.defaultBranches.firstWhere(
-                      (b) => b.id == item.branchId,
-                      orElse: () => ShopBranch.defaultBranches.first,
-                    );
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ShopLocationView(branch: branch),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceElevated,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppTheme.accentOrange.withValues(alpha: 0.5),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(LucideIcons.mapPin, color: AppTheme.accentOrange, size: 15),
-                        SizedBox(width: 6),
-                        Text(
-                          'Location',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),                // Right side: Completed badge (non-cancellable) or Cancel Inquiry Button
-                if (item.status == InquiryStatus.completed)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.statusCompleted.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppTheme.statusCompleted.withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle_rounded, color: AppTheme.statusCompleted, size: 14),
-                        SizedBox(width: 5),
-                        Text(
-                          'Completed',
-                          style: TextStyle(
-                            color: AppTheme.statusCompleted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  GestureDetector(
-                    onTap: () {
-                      Get.dialog(
-                        Dialog(
-                          backgroundColor: AppTheme.surfaceElevated,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: const BorderSide(color: AppTheme.borderDark),
-                          ),
-                          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'Cancel Inquiry?',
-                                  style: TextStyle(
-                                    fontFamily: 'Outfit',
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Are you sure you want to cancel inquiry #${item.id}?',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 13,
-                                    height: 1.45,
-                                  ),
-                                ),
-                                const SizedBox(height: 22),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextButton(
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: const Color(0xFF94A3B8),
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        onPressed: () => Get.back(),
-                                        child: const Text(
-                                          'Keep Inquiry',
-                                          style: TextStyle(
-                                            fontSize: 13.5,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.statusCancelled,
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          controller.cancelInquiry(item.id);
-                                          Get.back();
-                                        },
-                                        child: const Text(
-                                          'Yes, Cancel',
-                                          style: TextStyle(
-                                            fontSize: 13.5,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Cancel Inquiry',
-                      style: TextStyle(
-                        color: AppTheme.statusCancelled,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
               ],
             ),
-        ],
+            const SizedBox(height: 12),
+
+            _buildPriceBreakdown(item),
+
+            if (item.status != InquiryStatus.cancelled) ...[
+              _buildProcessStepper(item),
+              const SizedBox(height: 14),
+            ],
+
+            if (item.status != InquiryStatus.cancelled)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (item.status == InquiryStatus.unpaid)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accentOrange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 7,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () => _showPaymentSheet(context, item, controller),
+                      child: const Text(
+                        'Pay Now',
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+
+                  if (item.status == InquiryStatus.completed)
+                    const Text(
+                      'Installed',
+                      style: TextStyle(
+                        color: AppTheme.statusCompleted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () {
+                        Get.dialog(
+                          Dialog(
+                            backgroundColor: AppTheme.surfaceElevated,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: const BorderSide(
+                                color: AppTheme.borderDark,
+                              ),
+                            ),
+                            insetPadding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 24,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                22,
+                                22,
+                                22,
+                                18,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'Cancel Order?',
+                                    style: TextStyle(
+                                      fontFamily: 'Outfit',
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Are you sure you want to cancel order #${item.orderId}?',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 13,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 22),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextButton(
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: const Color(
+                                              0xFF94A3B8,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          onPressed: () => Get.back(),
+                                          child: const Text(
+                                            'Keep Order',
+                                            style: TextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppTheme.statusCancelled,
+                                            foregroundColor: AppTheme.textPrimary,
+                                            elevation: 0,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            controller.cancelInquiry(item.id);
+                                            Get.back();
+                                          },
+                                          child: const Text(
+                                            'Cancel',
+                                            style: TextStyle(
+                                              fontSize: 13.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: AppTheme.statusCancelled,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
-  /// Price breakdown container placed directly above the progress circles
   Widget _buildPriceBreakdown(TireInquiry item) {
     final int count = item.totalTiresCount;
-    final double origUnit = item.isSetOfFour ? (item.unitPrice / 0.90) : item.unitPrice;
+    final double origUnit = item.isSetOfFour
+        ? (item.unitPrice / 0.90)
+        : item.unitPrice;
     final double origTotal = origUnit * count;
-    final double discountAmount = item.isSetOfFour ? (origTotal - item.totalPrice) : 0.0;
+    final double discountAmount = item.isSetOfFour
+        ? (origTotal - item.totalPrice)
+        : 0.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -671,19 +677,22 @@ class _InquiriesViewState extends State<InquiriesView> {
             children: [
               Text(
                 'Estimated Subtotal ($count × ${_formatCurrency(origUnit)})',
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
               ),
               Text(
                 _formatCurrency(origTotal),
                 style: TextStyle(
                   fontFamily: 'Outfit',
-                  color: item.isSetOfFour ? const Color(0xFF94A3B8) : Colors.white,
+                  color: item.isSetOfFour
+                      ? const Color(0xFF94A3B8)
+                      : AppTheme.textPrimary,
                   fontSize: 12,
-                  fontWeight: item.isSetOfFour ? FontWeight.normal : FontWeight.bold,
-                  decoration: item.isSetOfFour ? TextDecoration.lineThrough : null,
+                  fontWeight: item.isSetOfFour
+                      ? FontWeight.normal
+                      : FontWeight.bold,
+                  decoration: item.isSetOfFour
+                      ? TextDecoration.lineThrough
+                      : null,
                 ),
               ),
             ],
@@ -723,7 +732,7 @@ class _InquiriesViewState extends State<InquiriesView> {
               const Text(
                 'Estimated Total',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.textPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -761,12 +770,11 @@ class _InquiriesViewState extends State<InquiriesView> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            '* Estimated price only. In-store quotation and final payment are confirmed at the shop counter.',
-            style: TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 10,
-            ),
+          Text(
+            item.status == InquiryStatus.unpaid
+                ? '* Order is unpaid. Tap "Pay Now" below to complete payment and place your workshop order.'
+                : '* In-store workshop bay fitting and wheel balancing confirmed at the shop.',
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
           ),
         ],
       ),
@@ -776,32 +784,29 @@ class _InquiriesViewState extends State<InquiriesView> {
   String _formatCurrency(double amount) {
     final php = amount.round();
     final formatted = php.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
     return '₱$formatted';
   }
 
-  /// Compact Vertical Connected Process Timeline (like the reference design)
-  /// Features a continuous vertical connecting line, single consistent brand coloring,
-  /// compact node dots/checks, and NO timestamps.
   Widget _buildProcessStepper(TireInquiry item) {
     if (item.status == InquiryStatus.cancelled) {
       return const SizedBox.shrink();
     }
 
-    final int currentStep = item.status.stageStep; // 1 = inquiring, 2 = confirmed, 3 = reserved
+    final int currentStep = item.status.stageStep;
 
     final steps = [
-      {'title': 'Inquiry submitted', 'step': 1},
-      {'title': 'Responded', 'step': 2},
-      {'title': 'Completed', 'step': 3},
+      {'title': 'Placed', 'step': 1},
+      {'title': 'Confirmed', 'step': 2},
+      {'title': 'Installed', 'step': 3},
     ];
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.02),
+        color: AppTheme.inputBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.borderDark),
       ),
@@ -815,7 +820,6 @@ class _InquiriesViewState extends State<InquiriesView> {
           final isPassedOrCurrent = currentStep >= stepNum;
           final isLast = index == steps.length - 1;
 
-          // Single consistent brand coloring (clean, not over-the-top)
           const brandColor = AppTheme.accentOrange;
           const inactiveColor = AppTheme.textMuted;
           const lineActiveColor = AppTheme.accentOrange;
@@ -824,7 +828,6 @@ class _InquiriesViewState extends State<InquiriesView> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Vertical node & connecting line column
               Column(
                 children: [
                   Container(
@@ -844,28 +847,31 @@ class _InquiriesViewState extends State<InquiriesView> {
                     ),
                     child: Center(
                       child: isCompleted
-                          ? const Icon(Icons.check, size: 11, color: Colors.black)
+                          ? const Icon(
+                              Icons.check,
+                              size: 11,
+                              color: Colors.black,
+                            )
                           : isCurrent
-                              ? Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black,
-                                    shape: BoxShape.circle,
-                                  ),
-                                )
-                              : Container(
-                                  width: 4,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: inactiveColor.withValues(alpha: 0.4),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                          ? Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Colors.black,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          : Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: inactiveColor.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                     ),
                   ),
 
-                  // Connecting line to next node
                   if (!isLast)
                     Container(
                       width: 2,
@@ -878,14 +884,13 @@ class _InquiriesViewState extends State<InquiriesView> {
               ),
               const SizedBox(width: 10),
 
-              // Step Title (No timestamp)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 1),
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: isPassedOrCurrent ? Colors.white : inactiveColor,
+                      color: isPassedOrCurrent ? AppTheme.textPrimary : inactiveColor,
                       fontSize: 12,
                       fontWeight: isCurrent
                           ? FontWeight.bold
@@ -898,6 +903,289 @@ class _InquiriesViewState extends State<InquiriesView> {
           );
         }),
       ),
+    );
+  }
+
+  void _showPaymentSheet(
+    BuildContext context,
+    TireInquiry item,
+    InquiryController controller,
+  ) {
+    String selectedMethod = 'GCash';
+
+    final paymentMethods = [
+      {
+        'id': 'GCash',
+        'title': 'GCash',
+        'subtitle': 'Fast checkout with GCash e-Wallet',
+        'icon': Icons.phone_android_rounded,
+      },
+      {
+        'id': 'Maya',
+        'title': 'Maya',
+        'subtitle': 'Pay seamlessly with Maya e-Wallet',
+        'icon': Icons.account_balance_wallet_rounded,
+      },
+      {
+        'id': 'Credit / Debit Card',
+        'title': 'Credit / Debit Card',
+        'subtitle': 'Visa, Mastercard, or JCB',
+        'icon': Icons.credit_card_rounded,
+      },
+      {
+        'id': 'Workshop Bay Counter',
+        'title': 'Pay at Workshop Counter',
+        'subtitle': 'Cash or card at 108 Quezon Avenue bay',
+        'icon': Icons.store_mall_directory_rounded,
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              decoration: const BoxDecoration(
+                color: AppTheme.surfaceElevated,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+                border: Border(
+                  top: BorderSide(color: AppTheme.borderDark, width: 1.5),
+                  left: BorderSide(color: AppTheme.borderDark, width: 1),
+                  right: BorderSide(color: AppTheme.borderDark, width: 1),
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF334155),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Payment',
+                              style: TextStyle(
+                                fontFamily: 'Outfit',
+                                color: AppTheme.textPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Order #${item.orderId}',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(LucideIcons.x, color: Color(0xFF94A3B8), size: 20),
+                          onPressed: () => Navigator.of(sheetCtx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceDark,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.borderDark),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${item.tireBrand} ${item.tireModel}',
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${item.totalTiresCount} tire${item.totalTiresCount > 1 ? 's' : ''} • Flagship Workshop Bay',
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            item.formattedTotalPrice,
+                            style: const TextStyle(
+                              fontFamily: 'Outfit',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.accentOrange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    const Text(
+                      'Select Payment Method',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    Column(
+                      children: paymentMethods.map((m) {
+                        final isSelected = selectedMethod == m['id'];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                selectedMethod = m['id'] as String;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceDark,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? AppTheme.accentOrange : AppTheme.borderDark,
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    m['icon'] as IconData,
+                                    color: isSelected ? AppTheme.accentOrange : const Color(0xFF94A3B8),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          m['title'] as String,
+                                          style: TextStyle(
+                                            color: isSelected ? AppTheme.accentOrange : AppTheme.textPrimary,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          m['subtitle'] as String,
+                                          style: const TextStyle(
+                                            color: Color(0xFF64748B),
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected ? AppTheme.accentOrange : const Color(0xFF64748B),
+                                        width: 1.5,
+                                      ),
+                                      color: isSelected ? AppTheme.accentOrange : Colors.transparent,
+                                    ),
+                                    child: isSelected
+                                        ? const Center(
+                                            child: Icon(Icons.check, size: 12, color: Colors.black),
+                                          )
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentOrange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          Navigator.of(sheetCtx).pop();
+
+                          await controller.markOrderAsPaid(
+                            item.id,
+                            paymentMethod: selectedMethod,
+                          );
+
+                          controller.selectedFilter.value = 'Placed';
+                        },
+                        child: Text(
+                          'Pay ${item.formattedTotalPrice}',
+                          style: const TextStyle(
+                            fontFamily: 'Outfit',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

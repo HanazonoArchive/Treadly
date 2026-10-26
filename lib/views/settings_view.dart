@@ -117,7 +117,7 @@ class SettingsView extends StatelessWidget {
                     : null,
               ),
               child: avatarUrl.isEmpty
-                  ? const Icon(LucideIcons.user, color: Colors.white, size: 40)
+                  ? const Icon(LucideIcons.user, color: AppTheme.textPrimary, size: 40)
                   : null,
             );
           }),

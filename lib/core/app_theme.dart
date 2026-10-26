@@ -1,43 +1,41 @@
 import 'package:flutter/material.dart';
 
-/// Centralized Design System & Theme Configuration
-/// "Precision Asphalt & Technical Amber" Executive Automotive Design System
-/// Inspired by Continental, Porsche Design, and Tire Rack Pro.
 class AppTheme {
-  // 🏁 Core Brand Surfaces & Backgrounds
-  static const Color bgDark = Color(0xFF0D0F14);         // Deep Carbon Asphalt (Screen Canvas)
-  static const Color surfaceDark = Color(0xFF161A22);    // Smoked Alloy (Cards, Tiles & Containers)
-  static const Color surfaceElevated = Color(0xFF1E232E);// Elevated Surfaces, Dialogs & Modals
-  static const Color headerDark = Color(0xFF11141A);     // Top Bars & Sticky Headers
-  static const Color inputBg = Color(0xFF090B0F);        // Deep Recessed Input Background
-  static const Color borderDark = Color(0xFF262C38);     // Precision Machined Alloy Borders
-  static const Color borderSubtle = Color(0xFF1E242E);   // Soft Divider Lines
+  static const Color bgDark = Color(0xFFF8FAFC);
+  static const Color surfaceDark = Color(0xFFFFFFFF);
+  static const Color surfaceElevated = Color(0xFFFFFFFF);
+  static const Color headerDark = Color(0xFFFFFFFF);
+  static const Color inputBg = Color(0xFFF1F5F9);
+  static const Color borderDark = Color(0xFFE2E8F0);
+  static const Color borderSubtle = Color(0xFFF1F5F9);
 
-  // 🏎️ Brand & Accent Colors
-  static const Color accentOrange = Color(0xFFF59E0B);   // Technical Amber Gold (Primary Brand Accent)
-  static const Color accentOrangeWarm = Color(0xFFEA580C);// Deep Track Amber (Gradients & Pressed states)
-  static const Color productBg = Color(0xFFF1F3F5);      // Studio Titanium Stage (for Tire Visuals)
+  static const Color accentOrange = Color(0xFFEA580C);
+  static const Color accentOrangeWarm = Color(0xFFC2410C);
+  static const Color productBg = Color(0xFFF8FAFC);
 
-  // 📝 Text Colors
-  static const Color textPrimary = Color(0xFFF8FAFC);    // Crisp Titanium White
-  static const Color textSecondary = Color(0xFF94A3B8);  // Alloy Slate (Specs, Subheadings)
-  static const Color textMuted = Color(0xFF64748B);      // Subtle Metadata
+  static const Color textPrimary = Color(0xFF000000);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
 
-  // 🚦 Refined Status Indicators
-  static const Color statusSubmitted = Color(0xFFF59E0B);// Technical Amber
-  static const Color statusResponded = Color(0xFF38BDF8);// Ice Sky Blue
-  static const Color statusCompleted = Color(0xFF10B981);// Emerald Green
-  static const Color statusCancelled = Color(0xFFF43F5E);// Crimson Rose
+  static const Color statusSubmitted = Color(0xFFD97706);
+  static const Color statusResponded = Color(0xFF0284C7);
+  static const Color statusCompleted = Color(0xFF059669);
+  static const Color statusCancelled = Color(0xFFE11D48);
 
-  // 🌙 Dark Theme Definition (The default look for Treadly)
-  static final ThemeData dark = ThemeData(
+  static final ThemeData light = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: Brightness.light,
     scaffoldBackgroundColor: bgDark,
-
-    // Top Bar Theme
+    colorScheme: const ColorScheme.light(
+      primary: accentOrange,
+      secondary: accentOrangeWarm,
+      surface: surfaceDark,
+      error: statusCancelled,
+      onPrimary: Colors.white,
+      onSurface: textPrimary,
+    ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: bgDark,
+      backgroundColor: headerDark,
       elevation: 0,
       centerTitle: false,
       iconTheme: IconThemeData(color: textPrimary),
@@ -48,12 +46,10 @@ class AppTheme {
         fontWeight: FontWeight.bold,
       ),
     ),
-
-    // Bottom Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: headerDark,
-      elevation: 0,
-      indicatorColor: surfaceElevated,
+      elevation: 1,
+      indicatorColor: const Color(0xFFFFEDD5),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const TextStyle(
@@ -71,8 +67,6 @@ class AppTheme {
         return const IconThemeData(color: textSecondary, size: 24);
       }),
     ),
-
-    // Card Theme
     cardTheme: CardThemeData(
       color: surfaceDark,
       elevation: 0,
@@ -81,12 +75,10 @@ class AppTheme {
         side: const BorderSide(color: borderDark, width: 1),
       ),
     ),
-
-    // Button Theme
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: accentOrange,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -94,7 +86,5 @@ class AppTheme {
     ),
   );
 
-  // Fallback light theme
-  static final ThemeData light = dark;
+  static final ThemeData dark = light;
 }
-

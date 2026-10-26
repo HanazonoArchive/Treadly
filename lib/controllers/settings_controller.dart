@@ -81,7 +81,9 @@ class SettingsController extends GetxController {
         'Profile name updated to $newName',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppTheme.surfaceDark,
-        colorText: Colors.white,
+        colorText: AppTheme.textPrimary,
+        borderColor: AppTheme.borderDark,
+        borderWidth: 1,
         margin: const EdgeInsets.all(16),
       );
     } catch (_) {
@@ -92,7 +94,9 @@ class SettingsController extends GetxController {
         'Name updated locally.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppTheme.surfaceDark,
-        colorText: Colors.white,
+        colorText: AppTheme.textPrimary,
+        borderColor: AppTheme.borderDark,
+        borderWidth: 1,
         margin: const EdgeInsets.all(16),
       );
     } finally {
@@ -123,7 +127,9 @@ class SettingsController extends GetxController {
       'Your profile picture has been updated.',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppTheme.surfaceDark,
-      colorText: Colors.white,
+      colorText: AppTheme.textPrimary,
+      borderColor: AppTheme.borderDark,
+      borderWidth: 1,
       margin: const EdgeInsets.all(16),
     );
   }
@@ -135,7 +141,9 @@ class SettingsController extends GetxController {
       'Local temporary images and cache cleared successfully.',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppTheme.surfaceDark,
-      colorText: Colors.white,
+      colorText: AppTheme.textPrimary,
+      borderColor: AppTheme.borderDark,
+      borderWidth: 1,
       margin: const EdgeInsets.all(16),
     );
   }
@@ -163,7 +171,7 @@ class SettingsController extends GetxController {
           style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         content: const Text(
-          'This will permanently delete your account, saved vouchers, and wallet balance. This action CANNOT be undone.',
+          'This will permanently delete your account and order history. This action CANNOT be undone.',
           style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
         ),
         actions: [

@@ -77,10 +77,14 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
             // Conversations List (Messenger Threads)
             Expanded(
               child: Obx(() {
-                final allInquiries = isStaff ? inquiryCtrl.staffInquiries : inquiryCtrl.customerInquiries;
+                final allInquiries = isStaff
+                    ? inquiryCtrl.staffInquiries
+                    : inquiryCtrl.customerInquiries;
 
                 // Rule: Cancelled inquiries automatically disappear from conversations
-                final activeInquiries = allInquiries.where((i) => i.status != InquiryStatus.cancelled).toList();
+                final activeInquiries = allInquiries
+                    .where((i) => i.status != InquiryStatus.cancelled)
+                    .toList();
 
                 // Apply status filter
                 final filteredByStatus = activeInquiries.where((i) {
@@ -112,7 +116,10 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
 
                 return ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemCount: list.length,
                   separatorBuilder: (context, index) => const Divider(
                     color: AppTheme.borderSubtle,
@@ -132,21 +139,29 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
     );
   }
 
-  Widget _buildMessengerHeader(BuildContext context, InquiryController controller, bool isStaff) {
+  Widget _buildMessengerHeader(
+    BuildContext context,
+    InquiryController controller,
+    bool isStaff,
+  ) {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 10, 16, 6),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 26),
+            icon: const Icon(
+              LucideIcons.chevronLeft,
+              color: AppTheme.textPrimary,
+              size: 26,
+            ),
           ),
           const SizedBox(width: 4),
           const Text(
             'Chats',
             style: TextStyle(
               fontFamily: 'Outfit',
-              color: Colors.white,
+              color: AppTheme.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.w900,
               letterSpacing: 0.5,
@@ -164,7 +179,9 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
               decoration: BoxDecoration(
                 color: AppTheme.accentOrange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: AppTheme.accentOrange.withValues(alpha: 0.5),
+                ),
               ),
               child: Text(
                 '$unread new',
@@ -199,9 +216,12 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
             Expanded(
               child: TextField(
                 controller: _searchCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 13.5,
+                ),
                 decoration: const InputDecoration(
-                  hintText: 'Search chats or inquiry ID...',
+                  hintText: 'Search chats or order ID...',
                   hintStyle: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                   border: InputBorder.none,
                   isDense: true,
@@ -221,7 +241,11 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                     _searchQuery = '';
                   });
                 },
-                child: const Icon(LucideIcons.x, size: 16, color: Color(0xFF94A3B8)),
+                child: const Icon(
+                  LucideIcons.x,
+                  size: 16,
+                  color: Color(0xFF94A3B8),
+                ),
               ),
           ],
         ),
@@ -237,7 +261,10 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
         child: Row(
           children: _filters.map((filter) {
             final isSelected = _selectedFilter == filter;
-            final unreadCount = inquiryCtrl.getCategoryUnreadCount(filter, isStaff: isStaff);
+            final unreadCount = inquiryCtrl.getCategoryUnreadCount(
+              filter,
+              isStaff: isStaff,
+            );
 
             return Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -249,12 +276,19 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6.5,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.accentOrange : AppTheme.surfaceDark,
+                    color: isSelected
+                        ? AppTheme.accentOrange
+                        : AppTheme.surfaceDark,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: isSelected ? AppTheme.accentOrange : AppTheme.borderDark,
+                      color: isSelected
+                          ? AppTheme.accentOrange
+                          : AppTheme.borderDark,
                     ),
                   ),
                   child: Row(
@@ -263,25 +297,39 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                       Text(
                         filter,
                         style: TextStyle(
-                          color: isSelected ? Colors.black : const Color(0xFF94A3B8),
+                          color: isSelected
+                              ? Colors.black
+                              : const Color(0xFF94A3B8),
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w600,
                         ),
                       ),
                       if (unreadCount > 0) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1.5,
+                          ),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.black : AppTheme.accentOrange,
+                            color: isSelected
+                                ? Colors.black
+                                : AppTheme.accentOrange,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
                           child: Center(
                             child: Text(
                               unreadCount > 9 ? '9+' : '$unreadCount',
                               style: TextStyle(
-                                color: isSelected ? AppTheme.accentOrange : Colors.black,
+                                color: isSelected
+                                    ? AppTheme.accentOrange
+                                    : Colors.black,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w900,
                                 height: 1,
@@ -301,40 +349,59 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
     });
   }
 
-  Widget _buildConversationRow(BuildContext context, TireInquiry item, bool isStaff) {
-    final isDone = item.status == InquiryStatus.completed || item.status == InquiryStatus.cancelled;
-    final unreadMsgs = isDone ? 0 : (isStaff ? item.unreadCountForStaff : item.unreadCountForCustomer);
-    final isUnviewed = isDone ? false : (isStaff ? !item.isStaffViewed : !item.isCustomerViewed);
-    final hasUnread = !isDone && (isStaff ? item.hasStaffUnread : item.hasCustomerUnread);
-    final displayUnreadCount = isDone ? 0 : (unreadMsgs > 0 ? unreadMsgs : (isUnviewed ? 1 : 0));
+  Widget _buildConversationRow(
+    BuildContext context,
+    TireInquiry item,
+    bool isStaff,
+  ) {
+    final isDone =
+        item.status == InquiryStatus.completed ||
+        item.status == InquiryStatus.cancelled;
+    final unreadMsgs = isDone
+        ? 0
+        : (isStaff ? item.unreadCountForStaff : item.unreadCountForCustomer);
+    final isUnviewed = isDone
+        ? false
+        : (isStaff ? !item.isStaffViewed : !item.isCustomerViewed);
+    final hasUnread =
+        !isDone && (isStaff ? item.hasStaffUnread : item.hasCustomerUnread);
+    final displayUnreadCount = isDone
+        ? 0
+        : (unreadMsgs > 0 ? unreadMsgs : (isUnviewed ? 1 : 0));
     final latestMsg = item.latestMessage;
 
     // Status colors and labels
     Color statusColor;
     String statusLabel;
     switch (item.status) {
+      case InquiryStatus.unpaid:
+        statusColor = AppTheme.accentOrange;
+        statusLabel = item.status.label;
+        break;
       case InquiryStatus.submitted:
         statusColor = AppTheme.statusSubmitted;
-        statusLabel = 'Inquired';
+        statusLabel = item.status.label;
         break;
       case InquiryStatus.responded:
         statusColor = AppTheme.statusResponded;
-        statusLabel = 'Responded';
+        statusLabel = item.status.label;
         break;
       case InquiryStatus.completed:
         statusColor = AppTheme.statusCompleted;
-        statusLabel = 'Completed';
+        statusLabel = item.status.label;
         break;
       case InquiryStatus.cancelled:
         statusColor = AppTheme.statusCancelled;
-        statusLabel = 'Cancelled';
+        statusLabel = item.status.label;
         break;
     }
 
     // Snippet preview
     String previewText;
     if (latestMsg != null) {
-      String staffName = item.assignedStaffName?.isNotEmpty == true ? item.assignedStaffName! : '';
+      String staffName = item.assignedStaffName?.isNotEmpty == true
+          ? item.assignedStaffName!
+          : '';
       if (staffName.isEmpty || staffName.toLowerCase() == 'staff') {
         if (Get.isRegistered<InquiryController>()) {
           final inqCtrl = Get.find<InquiryController>();
@@ -429,9 +496,11 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                               item.id.startsWith('#') ? item.id : '#${item.id}',
                               style: TextStyle(
                                 fontFamily: 'Outfit',
-                                color: Colors.white,
+                                color: AppTheme.textPrimary,
                                 fontSize: 15,
-                                fontWeight: hasUnread ? FontWeight.w900 : FontWeight.bold,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w900
+                                    : FontWeight.bold,
                                 letterSpacing: 0.5,
                               ),
                               maxLines: 1,
@@ -441,11 +510,16 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                             if (item.status != InquiryStatus.submitted) ...[
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 1.5,
+                                ),
                                 decoration: BoxDecoration(
                                   color: statusColor.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: statusColor.withValues(alpha: 0.35)),
+                                  border: Border.all(
+                                    color: statusColor.withValues(alpha: 0.35),
+                                  ),
                                 ),
                                 child: Text(
                                   statusLabel,
@@ -464,9 +538,13 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                       Text(
                         formattedTime,
                         style: TextStyle(
-                          color: hasUnread ? AppTheme.accentOrange : const Color(0xFF64748B),
+                          color: hasUnread
+                              ? AppTheme.accentOrange
+                              : const Color(0xFF64748B),
                           fontSize: 11,
-                          fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: hasUnread
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -492,7 +570,9 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                           style: TextStyle(
                             color: latestMsg == null
                                 ? AppTheme.accentOrange
-                                : (hasUnread ? Colors.white : const Color(0xFF8E9BAE)),
+                                : (hasUnread
+                                      ? AppTheme.textPrimary
+                                      : AppTheme.textSecondary),
                             fontSize: 12.5,
                             fontWeight: (hasUnread || latestMsg == null)
                                 ? FontWeight.bold
@@ -505,15 +585,23 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                       if (hasUnread) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6.5,
+                            vertical: 2,
+                          ),
                           decoration: const BoxDecoration(
                             color: AppTheme.accentOrange,
                             shape: BoxShape.circle,
                           ),
-                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
                           child: Center(
                             child: Text(
-                              displayUnreadCount > 9 ? '9+' : '$displayUnreadCount',
+                              displayUnreadCount > 9
+                                  ? '9+'
+                                  : '$displayUnreadCount',
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 10,
@@ -551,7 +639,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.03),
+                color: AppTheme.inputBg,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppTheme.borderDark),
               ),
@@ -566,7 +654,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
               isGuest ? 'Sign In to View Chats' : 'No Conversations',
               style: const TextStyle(
                 fontFamily: 'Outfit',
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
@@ -588,12 +676,20 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.accentOrange,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: () => Get.to(() => const SignInView()),
-                child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                child: const Text(
+                  'Sign In',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ),
             ],
           ],
@@ -607,7 +703,9 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
     final difference = now.difference(time);
 
     if (difference.inDays == 0) {
-      final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+      final hour = time.hour > 12
+          ? time.hour - 12
+          : (time.hour == 0 ? 12 : time.hour);
       final minute = time.minute.toString().padLeft(2, '0');
       final amPm = time.hour >= 12 ? 'PM' : 'AM';
       return '$hour:$minute $amPm';

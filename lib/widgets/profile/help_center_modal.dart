@@ -53,19 +53,24 @@ class _HelpCenterSheetContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildFaqItem(
-                  question: 'How does tire inquiry and reservation work?',
+                  question: 'How does tire ordering and in-store pickup work?',
                   answer:
-                      'Find your tire in the catalog, choose your quantity or bundle, and submit an inquiry. Our shop team will review stock in real time. Once confirmed, your tires are reserved and prepped for your drive-in visit.',
+                      'Select your tires in the catalog, choose your quantity or Set of 4 bundle, and tap "Order". Your order starts as "Placed". Once our workshop bay team verifies stock, your order status becomes "Confirmed" and prepped for your drive-in bay fitment.',
                 ),
                 _buildFaqItem(
                   question: 'When do I pay for my tires and installation?',
                   answer:
-                      'All payments are handled in-person directly at the shop when you arrive for your scheduled installation. No advance online payment is required.',
+                      'All payments are settled in-person directly at the workshop counter after your tires are installed. We accept Cash, GCash, and Card with zero advance online fees.',
                 ),
                 _buildFaqItem(
-                  question: 'How do I locate the shop?',
+                  question: 'Where is Treadly located?',
                   answer:
-                      'Under your "Inquiries" tab, tap the "Location" button on any active inquiry to view our shop branch address, contact numbers, and interactive map directions.',
+                      'Our flagship workshop center is located at 108 Quezon Avenue, Quezon City. You can view our operating hours, hotline, and drive-in service bay details under Workshop Bay Location in your Profile.',
+                ),
+                _buildFaqItem(
+                  question: 'What is included in the bay service?',
+                  answer:
+                      'Every tire purchase includes in-bay tire mounting, high-speed balancing, tire disposal, and computerized alignment diagnostics.',
                 ),
                 _buildFaqItem(
                   question: 'How do I check my vehicle tire size?',
@@ -73,9 +78,9 @@ class _HelpCenterSheetContent extends StatelessWidget {
                       'Check the placard sticker on the driver-side door jamb, your car owner\'s manual, or read the embossed numbers on your current tire sidewall (e.g. 225/45 R18).',
                 ),
                 _buildFaqItem(
-                  question: 'Can I cancel my inquiry or reservation?',
+                  question: 'Can I cancel my order?',
                   answer:
-                      'Yes, you can tap "Cancel Inquiry" in the Inquiries tab at any time before your drive-in visit with zero cancellation fees.',
+                      'Yes, you can tap "Cancel Order" in the Orders tab at any time before your drive-in visit with zero cancellation fees.',
                 ),
                 const SizedBox(height: 24),
               ],
@@ -91,7 +96,7 @@ class _HelpCenterSheetContent extends StatelessWidget {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.white24,
+        color: AppTheme.borderDark,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -114,7 +119,7 @@ class _HelpCenterSheetContent extends StatelessWidget {
               ),
               SizedBox(height: 2),
               Text(
-                'Tire fitment guide & inquiry answers',
+                'Tire fitment guide & workshop FAQs',
                 style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
               ),
             ],

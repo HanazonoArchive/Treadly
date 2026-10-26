@@ -114,7 +114,7 @@ class SearchView extends StatelessWidget {
                                 controller.submitSearch(val);
                               },
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.textPrimary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -231,7 +231,7 @@ class SearchView extends StatelessWidget {
                     const Text(
                       'Recent Searches',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.3,
@@ -285,7 +285,7 @@ class SearchView extends StatelessWidget {
                               Text(
                                 keyword,
                                 style: const TextStyle(
-                                  color: Color(0xFFCBD5E1),
+                                  color: AppTheme.textPrimary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -315,7 +315,7 @@ class SearchView extends StatelessWidget {
           const Text(
             'Popular Searches',
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.3,
@@ -353,7 +353,7 @@ class SearchView extends StatelessWidget {
                       Text(
                         keyword,
                         style: const TextStyle(
-                          color: Color(0xFFCBD5E1),
+                          color: AppTheme.textPrimary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -411,7 +411,7 @@ class SearchView extends StatelessWidget {
                               child: Text(
                                 cat,
                                 style: TextStyle(
-                                  color: isSelected ? Colors.black : Colors.white,
+                                  color: isSelected ? Colors.white : AppTheme.textPrimary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -515,7 +515,7 @@ class SearchView extends StatelessWidget {
                     Icon(
                       Icons.search_off_rounded,
                       size: 54,
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: AppTheme.textMuted,
                     ),
                     const SizedBox(height: 14),
                     const Text(
@@ -605,7 +605,7 @@ class SearchView extends StatelessWidget {
                     child: Text(
                       option.label,
                       style: TextStyle(
-                        color: isSelected ? AppTheme.accentOrange : Colors.white,
+                        color: isSelected ? AppTheme.accentOrange : AppTheme.textPrimary,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         fontSize: 13,
                       ),

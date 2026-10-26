@@ -6,12 +6,12 @@ import '../../controllers/inquiry/inquiry_controller.dart';
 import '../../controllers/navigation_controller.dart';
 import '../../core/app_theme.dart';
 
-/// Clean Customer Inquiries Section for Driver Profile.
-/// Replaces generic e-commerce order tracking with an authentic O2O tire inquiry pipeline:
-/// 1. Inquiring (Customer inquiry submitted)
-/// 2. Responded (Shop confirmed stock and availability)
-/// 3. Completed (Customer visited store, purchased, and installed)
-/// 4. Cancelled (Inquiry closed without purchase)
+/// Clean Customer Orders Section for Driver Profile.
+/// Real-world BOPIS tire order lifecycle:
+/// 1. Placed (Order received)
+/// 2. Confirmed (Workshop confirmed stock and bay ready)
+/// 3. Installed (Customer visited bay, fitted, and paid)
+/// 4. Cancelled (Order cancelled)
 class MyPurchaseSection extends StatelessWidget {
   MyPurchaseSection({super.key});
 
@@ -41,7 +41,7 @@ class MyPurchaseSection extends StatelessWidget {
         const Row(
           children: [
             Text(
-              'My Inquiries',
+              'My Orders',
               style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 18,
@@ -54,7 +54,7 @@ class MyPurchaseSection extends StatelessWidget {
           onTap: () {
             controller.selectedFilter.value = 'All';
             if (Get.isRegistered<NavigationController>()) {
-              Get.find<NavigationController>().changeTab(2); // Go to Inquiries Tab
+              Get.find<NavigationController>().changeTab(2); // Go to Orders Tab
             }
           },
           child: const Text(
@@ -76,40 +76,51 @@ class MyPurchaseSection extends StatelessWidget {
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
+              child: _buildStatusButton(
+                icon: LucideIcons.creditCard,
+                label: 'Unpaid',
+                count: controller.unpaidCount,
+                onTap: () => _navigateToStatus('Unpaid'),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: _buildStatusButton(
                 icon: LucideIcons.send,
-                label: 'Inquiring',
+                label: 'Placed',
                 count: controller.inquiringCount,
-                onTap: () => _navigateToStatus('Inquiring'),
+                onTap: () => _navigateToStatus('Placed'),
               ),
             ),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: _buildStatusButton(
-                icon: LucideIcons.messageSquareCheck,
-                label: 'Responded',
+                icon: LucideIcons.checkCheck,
+                label: 'Confirmed',
                 count: controller.respondedCount,
-                onTap: () => _navigateToStatus('Responded'),
+                onTap: () => _navigateToStatus('Confirmed'),
               ),
             ),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: _buildStatusButton(
                 icon: LucideIcons.checkCircle2,
-                label: 'Completed',
+                label: 'Installed',
                 count: controller.completedCount,
-                onTap: () => _navigateToStatus('Completed'),
+                onTap: () => _navigateToStatus('Installed'),
               ),
             ),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: _buildStatusButton(
                 icon: LucideIcons.xCircle,
                 label: 'Cancelled',
@@ -126,7 +137,7 @@ class MyPurchaseSection extends StatelessWidget {
   void _navigateToStatus(String status) {
     controller.selectedFilter.value = status;
     if (Get.isRegistered<NavigationController>()) {
-      Get.find<NavigationController>().changeTab(2); // Inquiries tab
+      Get.find<NavigationController>().changeTab(2); // Orders tab
     }
   }
 
@@ -137,8 +148,11 @@ class MyPurchaseSection extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: AppTheme.bgDark.withValues(alpha: 0.75),
-      borderRadius: BorderRadius.circular(10),
+      color: AppTheme.surfaceDark,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: AppTheme.borderDark),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
@@ -152,7 +166,7 @@ class MyPurchaseSection extends StatelessWidget {
               Badge(
                 isLabelVisible: count > 0,
                 backgroundColor: AppTheme.accentOrange,
-                textColor: Colors.black,
+                textColor: Colors.white,
                 label: Text(
                   count > 99 ? '99+' : '$count',
                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10),

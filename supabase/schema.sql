@@ -59,44 +59,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- =============================================================================
--- 4. USER WALLETS (Matches Profile "My Wallet")
--- =============================================================================
-CREATE TABLE IF NOT EXISTS public.user_wallets (
-    user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-    balance NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
-    vouchers_count INT NOT NULL DEFAULT 0,
-    points_count INT NOT NULL DEFAULT 0,  -- 5% of each checkout item total
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- =============================================================================
--- 5. VOUCHERS (Universal Catalog of Vouchers for Everyone)
--- =============================================================================
-CREATE TABLE IF NOT EXISTS public.vouchers (
-    id TEXT PRIMARY KEY,               -- e.g. 'WELCOME500', 'SUMMER-TIRE-10'
-    code TEXT NOT NULL UNIQUE,         -- 'WELCOME500'
-    title TEXT NOT NULL,               -- '₱500 Off First Set'
-    discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
-    min_spend NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- =============================================================================
--- 6. USER VOUCHERS (Tracks individual redemption: is_available changes to false when used)
--- =============================================================================
-CREATE TABLE IF NOT EXISTS public.user_vouchers (
-    id BIGSERIAL PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    voucher_id TEXT NOT NULL REFERENCES public.vouchers(id) ON DELETE CASCADE,
-    is_available BOOLEAN NOT NULL DEFAULT true,  -- changes to false when redeemed!
-    used_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    UNIQUE(user_id, voucher_id)
-);
-
--- =============================================================================
--- 7. CART ITEMS (Active Cart Synchronized to Cloud for Authenticated Users)
+-- 4. CART ITEMS (Active Cart Synchronized to Cloud for Authenticated Users)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS public.cart_items (
     id BIGSERIAL PRIMARY KEY,
@@ -160,18 +123,6 @@ BEGIN
         NEW.email
     );
 
-    -- 2. Assign all currently active vouchers to the new user
-    FOR voucher_record IN SELECT id FROM public.vouchers WHERE is_active = true LOOP
-        INSERT INTO public.user_vouchers (user_id, voucher_id, is_available)
-        VALUES (NEW.id, voucher_record.id, true)
-        ON CONFLICT (user_id, voucher_id) DO NOTHING;
-        assigned_vouchers_count := assigned_vouchers_count + 1;
-    END LOOP;
-
-    -- 3. Create initial wallet with 0 balance, 0 points, and the voucher count
-    INSERT INTO public.user_wallets (user_id, balance, vouchers_count, points_count)
-    VALUES (NEW.id, 0.00, assigned_vouchers_count, 0);
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -183,14 +134,11 @@ CREATE TRIGGER on_auth_user_created
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- =============================================================================
--- 10. ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES
 -- =============================================================================
 
 ALTER TABLE public.tires ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vouchers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_vouchers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_addresses ENABLE ROW LEVEL SECURITY;
@@ -208,33 +156,6 @@ CREATE POLICY "Users can view their own profile"
 CREATE POLICY "Users can update their own profile"
     ON public.profiles FOR UPDATE
     USING (auth.uid() = id);
-
--- 3. Wallet: Read & update own wallet
-CREATE POLICY "Users can view their own wallet"
-    ON public.user_wallets FOR SELECT
-    USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own wallet"
-    ON public.user_wallets FOR UPDATE
-    USING (auth.uid() = user_id);
-
--- 4. Vouchers: Public read active vouchers
-CREATE POLICY "Allow read access for active vouchers"
-    ON public.vouchers FOR SELECT
-    USING (is_active = true);
-
--- 5. User Vouchers: View, insert, & update own redemption status
-CREATE POLICY "Users can view their own vouchers"
-    ON public.user_vouchers FOR SELECT
-    USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own vouchers"
-    ON public.user_vouchers FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own voucher status"
-    ON public.user_vouchers FOR UPDATE
-    USING (auth.uid() = user_id);
 
 -- 6. Orders: View & insert own orders
 CREATE POLICY "Users can view their own orders"

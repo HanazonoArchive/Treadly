@@ -18,12 +18,14 @@ class TopBanner extends StatelessWidget {
         () => Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                _buildAvatar(auth),
-                const SizedBox(width: 14),
-                _buildNameAndBadge(auth),
-              ],
+            Expanded(
+              child: Row(
+                children: [
+                  _buildAvatar(auth),
+                  const SizedBox(width: 14),
+                  Expanded(child: _buildNameAndBadge(auth)),
+                ],
+              ),
             ),
             if (auth.isGuest.value)
               _buildSignInButton()
@@ -50,15 +52,17 @@ class TopBanner extends StatelessWidget {
       ),
       child: avatarUrl.isEmpty
           ? const Center(
-              child: Icon(LucideIcons.user, color: Colors.white, size: 28),
+              child: Icon(LucideIcons.user, color: AppTheme.textPrimary, size: 28),
             )
           : null,
     );
   }
 
   Widget _buildNameAndBadge(AuthController auth) {
+    final showEmail = !auth.isGuest.value && auth.userEmail.value.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           auth.displayName.value,
@@ -67,23 +71,21 @@ class TopBanner extends StatelessWidget {
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: AppTheme.accentOrange.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            auth.isGuest.value ? 'Guest' : 'Member',
+        if (showEmail) ...[
+          const SizedBox(height: 2),
+          Text(
+            auth.userEmail.value,
             style: const TextStyle(
-              color: AppTheme.accentOrange,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+              color: AppTheme.textSecondary,
+              fontSize: 12,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
+        ],
       ],
     );
   }

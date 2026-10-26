@@ -80,7 +80,7 @@ class HomeActionGrid extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFFCBD5E1),
+                        color: AppTheme.textPrimary,
                         letterSpacing: -0.2,
                       ),
                       textAlign: TextAlign.center,

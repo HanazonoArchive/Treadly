@@ -47,7 +47,7 @@ class ProductTile extends StatelessWidget {
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.04),
+                                color: AppTheme.inputBg,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -62,27 +62,16 @@ class ProductTile extends StatelessWidget {
                     ),
                   ),
                   if (tire.isOutOfStock)
-                    Positioned(
+                    const Positioned(
                       top: 0,
                       left: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: const Color(0xFFEF4444).withValues(alpha: 0.45),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: const Text(
-                          'SOLD OUT',
-                          style: TextStyle(
-                            color: Color(0xFFEF4444),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.3,
-                          ),
+                      child: Text(
+                        'SOLD OUT',
+                        style: TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -107,7 +96,7 @@ class ProductTile extends StatelessWidget {
             Text(
               tire.model,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 height: 1.2,
@@ -123,7 +112,7 @@ class ProductTile extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: AppTheme.borderDark,
                   ),
                 ),
               ),
@@ -137,7 +126,7 @@ class ProductTile extends StatelessWidget {
                       fontFamily: 'Outfit',
                       fontSize: 14.5,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(width: 4),

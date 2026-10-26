@@ -14,21 +14,14 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Colors.white, AppTheme.accentOrange],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds),
-            child: const Text(
-              'TREADLY',
-              style: TextStyle(
-                fontFamily: 'Outfit',
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
-                color: Colors.white,
-              ),
+          const Text(
+            'TREADLY',
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+              color: AppTheme.accentOrange,
             ),
           ),
           const TopBarMessageButton(),

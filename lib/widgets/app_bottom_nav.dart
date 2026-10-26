@@ -39,7 +39,7 @@ class AppBottomNav extends StatelessWidget {
               return Badge(
                 isLabelVisible: activeCount > 0,
                 backgroundColor: AppTheme.accentOrange,
-                textColor: Colors.black,
+                textColor: Colors.white,
                 label: Text(
                   '$activeCount',
                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10),
@@ -52,7 +52,7 @@ class AppBottomNav extends StatelessWidget {
               return Badge(
                 isLabelVisible: activeCount > 0,
                 backgroundColor: AppTheme.accentOrange,
-                textColor: Colors.black,
+                textColor: Colors.white,
                 label: Text(
                   '$activeCount',
                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10),
@@ -60,7 +60,7 @@ class AppBottomNav extends StatelessWidget {
                 child: const Icon(LucideIcons.calendarClock, color: AppTheme.accentOrange),
               );
             }),
-            label: 'Inquiries',
+            label: 'Orders',
           ),
           const NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),

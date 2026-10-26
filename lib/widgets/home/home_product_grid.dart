@@ -28,7 +28,7 @@ class HomeProductGrid extends StatelessWidget {
               fontFamily: 'Outfit',
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: AppTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 12),

@@ -9,6 +9,7 @@ import '../../core/app_theme.dart';
 import '../../models/inquiry.dart';
 import '../../models/shop_branch.dart';
 import '../../models/tire.dart';
+import '../../services/firebase_sync_service.dart';
 import '../auth_controller.dart';
 
 /// Central Controller for Inquiries & Reservations (Customer + Shop Admin)
@@ -25,6 +26,204 @@ class InquiryController extends GetxController {
   final RxList<TireInquiry> inquiries = <TireInquiry>[].obs;
   final RxBool isLoading = false.obs;
   final RxString selectedFilter = 'All'.obs;
+
+  // ===========================================================================
+  // MOBILE-NATIVE STORE ANALYTICS GETTERS
+  // ===========================================================================
+
+  /// Total Gross Revenue from Completed orders (or non-cancelled orders)
+  double get totalRevenue {
+    final completed = inquiries.where((inq) => inq.status == InquiryStatus.completed);
+    if (completed.isNotEmpty) {
+      return completed.fold(0.0, (acc, inq) => acc + inq.totalPrice);
+    }
+    return inquiries
+        .where((inq) => inq.status != InquiryStatus.cancelled)
+        .fold(0.0, (acc, inq) => acc + inq.totalPrice);
+  }
+
+  /// Total units of tires fitted / ordered
+  int get totalUnitsFitted {
+    return inquiries
+        .where((inq) => inq.status != InquiryStatus.cancelled)
+        .fold(0, (acc, inq) => acc + inq.totalTiresCount);
+  }
+
+  /// Total completed orders count
+  int get completedOrdersCount =>
+      inquiries.where((inq) => inq.status == InquiryStatus.completed).length;
+
+  /// Orders pending bay prep
+  int get pendingPrepsCount =>
+      inquiries.where((inq) => inq.status == InquiryStatus.submitted).length;
+
+  /// Orders ready in bay
+  int get bayReadyCount =>
+      inquiries.where((inq) => inq.status == InquiryStatus.responded).length;
+
+  /// Average Order Value (AOV)
+  double get averageOrderValue {
+    final valid = inquiries.where((inq) => inq.status != InquiryStatus.cancelled).toList();
+    if (valid.isEmpty) return 0.0;
+    return totalRevenue / valid.length;
+  }
+
+  /// Share of orders that are 'Set of 4' bundle vs 'Single' replacements
+  double get setOfFourRatio {
+    final valid = inquiries.where((inq) => inq.status != InquiryStatus.cancelled).toList();
+    if (valid.isEmpty) return 0.70;
+    final setOfFourCount = valid.where((inq) => inq.isSetOfFour).length;
+    return setOfFourCount / valid.length;
+  }
+
+  /// Top 5 Bestselling Tires derived from live orders
+  List<Map<String, dynamic>> get topSellingTiresAnalytics =>
+      getTopSellingTiresWithSort(sortBy: 'units', timeframe: 'All Time').take(5).toList();
+
+  /// Filter inquiries by timeframe
+  List<TireInquiry> getInquiriesForTimeframe(String timeframe) {
+    final now = DateTime.now();
+    final valid = inquiries.where((i) => i.status != InquiryStatus.cancelled).toList();
+    if (timeframe == 'Today') {
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      return valid.where((i) => i.createdAt.isAfter(startOfDay)).toList();
+    } else if (timeframe == 'This Week') {
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      final startDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+      return valid.where((i) => i.createdAt.isAfter(startDay)).toList();
+    } else if (timeframe == 'This Month') {
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      return valid.where((i) => i.createdAt.isAfter(startOfMonth)).toList();
+    }
+    return valid;
+  }
+
+  /// Revenue computed for a specific timeframe
+  double getTimeframeRevenue(String timeframe) {
+    final inqs = getInquiriesForTimeframe(timeframe);
+    final completed = inqs.where((inq) => inq.status == InquiryStatus.completed);
+    if (completed.isNotEmpty) {
+      return completed.fold(0.0, (acc, inq) => acc + inq.totalPrice);
+    }
+    return inqs.fold(0.0, (acc, inq) => acc + inq.totalPrice);
+  }
+
+  /// Units fitted for timeframe
+  int getTimeframeUnitsFitted(String timeframe) {
+    return getInquiriesForTimeframe(timeframe)
+        .fold(0, (acc, inq) => acc + inq.totalTiresCount);
+  }
+
+  /// Completed count for timeframe
+  int getTimeframeCompletedCount(String timeframe) {
+    return getInquiriesForTimeframe(timeframe)
+        .where((i) => i.status == InquiryStatus.completed)
+        .length;
+  }
+
+  /// Average order value for timeframe
+  double getTimeframeAov(String timeframe) {
+    final inqs = getInquiriesForTimeframe(timeframe);
+    if (inqs.isEmpty) return 0.0;
+    return getTimeframeRevenue(timeframe) / inqs.length;
+  }
+
+  /// Conversion rate: completed / total non-cancelled orders
+  double get conversionRate {
+    final total = inquiries.where((i) => i.status != InquiryStatus.cancelled).length;
+    if (total == 0) return 0.0;
+    return (completedOrdersCount / total) * 100.0;
+  }
+
+  /// Top Selling Tires with sorting (units, revenue, brand) and timeframe
+  List<Map<String, dynamic>> getTopSellingTiresWithSort({
+    String sortBy = 'units',
+    String timeframe = 'All Time',
+  }) {
+    final inqs = getInquiriesForTimeframe(timeframe);
+    final Map<String, Map<String, dynamic>> aggregates = {};
+    for (final inq in inqs) {
+      final key = '${inq.tireBrand} ${inq.tireModel}';
+      if (!aggregates.containsKey(key)) {
+        aggregates[key] = {
+          'name': key,
+          'brand': inq.tireBrand,
+          'model': inq.tireModel,
+          'size': inq.tireSize,
+          'unitsSold': 0,
+          'revenue': 0.0,
+        };
+      }
+      aggregates[key]!['unitsSold'] = (aggregates[key]!['unitsSold'] as int) + inq.totalTiresCount;
+      aggregates[key]!['revenue'] = (aggregates[key]!['revenue'] as double) + inq.totalPrice;
+    }
+
+    final list = aggregates.values.toList();
+    if (sortBy == 'revenue') {
+      list.sort((a, b) => (b['revenue'] as double).compareTo(a['revenue'] as double));
+    } else if (sortBy == 'brand') {
+      list.sort((a, b) => (a['brand'] as String).compareTo(b['brand'] as String));
+    } else {
+      list.sort((a, b) => (b['unitsSold'] as int).compareTo(a['unitsSold'] as int));
+    }
+    return list;
+  }
+
+  /// Export analytics dataset to clean CSV format
+  String generateCsvExport({String timeframe = 'All Time'}) {
+    final inqs = getInquiriesForTimeframe(timeframe);
+    final buffer = StringBuffer();
+    buffer.writeln('Treadly Auto & Tire Center - Workshop Analytics Export');
+    buffer.writeln('Generated,${DateTime.now().toLocal().toString().split('.').first}');
+    buffer.writeln('Time Horizon,$timeframe');
+    buffer.writeln('');
+    buffer.writeln('=== EXECUTIVE METRICS ===');
+    buffer.writeln('Metric,Value');
+    buffer.writeln('Gross Revenue,PHP ${getTimeframeRevenue(timeframe).toStringAsFixed(2)}');
+    buffer.writeln('Completed Bay Fittings,${getTimeframeCompletedCount(timeframe)}');
+    buffer.writeln('Units Fitted,${getTimeframeUnitsFitted(timeframe)}');
+    buffer.writeln('Average Order Value,PHP ${getTimeframeAov(timeframe).toStringAsFixed(2)}');
+    buffer.writeln('Order Conversion Rate,${conversionRate.toStringAsFixed(1)}%');
+    buffer.writeln('');
+    buffer.writeln('=== TOP SELLING TIRES ===');
+    buffer.writeln('Rank,Brand,Model,Size,Units Fitted,Revenue (PHP)');
+    final top = getTopSellingTiresWithSort(sortBy: 'units', timeframe: timeframe);
+    for (int i = 0; i < top.length; i++) {
+      final t = top[i];
+      buffer.writeln('${i + 1},"${t['brand']}","${t['model']}","${t['size']}",${t['unitsSold']},${(t['revenue'] as double).toStringAsFixed(2)}');
+    }
+    buffer.writeln('');
+    buffer.writeln('=== ORDER TRANSACTIONS ===');
+    buffer.writeln('Order Number,Customer Name,Phone,Tire Brand,Tire Model,Size,Units,Set of 4,Total (PHP),Status,Date');
+    for (final inq in inqs) {
+      buffer.writeln('${inq.orderNumber},"${inq.customerName}","${inq.customerPhone}","${inq.tireBrand}","${inq.tireModel}","${inq.tireSize}",${inq.totalTiresCount},${inq.isSetOfFour},${inq.totalPrice.toStringAsFixed(2)},${inq.status.label},${inq.createdAt.toLocal().toString().split(' ').first}');
+    }
+    return buffer.toString();
+  }
+
+  /// Export formatted text summary for direct pasting into messaging or email
+  String generateExecutiveTextSummary({String timeframe = 'All Time'}) {
+    final buffer = StringBuffer();
+    buffer.writeln('TREADLY WORKSHOP EXECUTIVE SUMMARY');
+    buffer.writeln('Flagship: Treadly Auto & Tire Center (108 Quezon Ave)');
+    buffer.writeln('Generated: ${DateTime.now().toLocal().toString().split('.').first}');
+    buffer.writeln('Timeframe: $timeframe');
+    buffer.writeln('----------------------------------------');
+    buffer.writeln('• Gross Revenue: ₱${getTimeframeRevenue(timeframe).toStringAsFixed(0)}');
+    buffer.writeln('• Completed Bay Fittings: ${getTimeframeCompletedCount(timeframe)} orders');
+    buffer.writeln('• Total Tires Fitted: ${getTimeframeUnitsFitted(timeframe)} units');
+    buffer.writeln('• In Bay Preparation: ${pendingPrepsCount + bayReadyCount} orders');
+    buffer.writeln('• Average Order Ticket: ₱${getTimeframeAov(timeframe).toStringAsFixed(0)}');
+    buffer.writeln('• Conversion Rate: ${conversionRate.toStringAsFixed(1)}%');
+    buffer.writeln('----------------------------------------');
+    buffer.writeln('Top Fitting Tires:');
+    final top = getTopSellingTiresWithSort(sortBy: 'units', timeframe: timeframe).take(5).toList();
+    for (int i = 0; i < top.length; i++) {
+      final t = top[i];
+      buffer.writeln('${i + 1}. ${t['brand']} ${t['model']} (${t['size']}): ${t['unitsSold']} units • ₱${(t['revenue'] as double).toStringAsFixed(0)}');
+    }
+    return buffer.toString();
+  }
 
   // Shop Branches
   final RxList<ShopBranch> branches = <ShopBranch>[].obs;
@@ -57,6 +256,11 @@ class InquiryController extends GetxController {
     fetchStaffDirectory();
     await _loadLocalInquiries();
     _startFirestoreInquiriesStream();
+
+    // Sync flagship workshop and clean legacy tire data and dead collections in Firebase
+    FirebaseSyncService.instance.cleanLegacyFirestoreTires();
+    FirebaseSyncService.instance.cleanDeprecatedCollections();
+    FirebaseSyncService.instance.syncFlagshipWorkshop();
 
     try {
       if (Get.isRegistered<AuthController>()) {
@@ -152,23 +356,24 @@ class InquiryController extends GetxController {
   Future<void> _fetchBranchesFromFirestore() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('shop_branches').get();
-      if (snapshot.docs.isNotEmpty) {
-        final loaded = snapshot.docs.map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return ShopBranch.fromJson(data);
-        }).toList();
-        if (loaded.isNotEmpty) {
-          branches.assignAll(loaded);
-          final currentActive = branches.firstWhereOrNull((b) => b.id == activeBranch.value.id);
-          if (currentActive != null) {
-            activeBranch.value = currentActive;
-          } else {
-            activeBranch.value = branches.first;
-          }
-          _saveBranchesToLocal();
+      // Ensure flagship branch is mirrored in Firestore
+      await FirebaseFirestore.instance
+          .collection('shop_branches')
+          .doc(ShopBranch.flagship.id)
+          .set(ShopBranch.flagship.toJson(), SetOptions(merge: true));
+
+      // Clean old multi-branch documents
+      for (final doc in snapshot.docs) {
+        if (doc.id != ShopBranch.flagship.id) {
+          try {
+            await FirebaseFirestore.instance.collection('shop_branches').doc(doc.id).delete();
+          } catch (_) {}
         }
       }
+
+      branches.assignAll([ShopBranch.flagship]);
+      activeBranch.value = ShopBranch.flagship;
+      _saveBranchesToLocal();
     } catch (e) {
       debugPrint('[InquiryController] Firestore fetch branches note: $e');
     }
@@ -305,6 +510,10 @@ class InquiryController extends GetxController {
     )).toList();
   }
 
+  int get unpaidCount => _isStaffViewer
+      ? staffInquiries.where((i) => i.status == InquiryStatus.unpaid).length
+      : customerInquiries.where((i) => i.status == InquiryStatus.unpaid).length;
+
   int get inquiringCount => _isStaffViewer
       ? staffInquiries.where((i) => i.status == InquiryStatus.submitted).length
       : customerInquiries.where((i) => i.status == InquiryStatus.submitted).length;
@@ -339,32 +548,36 @@ class InquiryController extends GetxController {
     if (category == 'All') {
       return active.where((i) => isStaff ? i.hasStaffUnread : i.hasCustomerUnread).length;
     }
-    if (category == 'Inquired' || category == 'Submitted') {
+    if (category == 'Unpaid') {
+      return active
+          .where((i) => i.status == InquiryStatus.unpaid && (isStaff ? i.hasStaffUnread : i.hasCustomerUnread))
+          .length;
+    }
+    if (category == 'Placed' || category == 'Inquired' || category == 'Submitted') {
       return active
           .where((i) => i.status == InquiryStatus.submitted && (isStaff ? i.hasStaffUnread : i.hasCustomerUnread))
           .length;
     }
-    if (category == 'Responded') {
+    if (category == 'Confirmed' || category == 'Responded') {
       return active
           .where((i) => i.status == InquiryStatus.responded && (isStaff ? i.hasStaffUnread : i.hasCustomerUnread))
           .length;
     }
-    if (category == 'Completed') {
+    if (category == 'Installed' || category == 'Completed') {
       return 0; // Completed conversations are done; no badge number
     }
     return 0;
   }
 
-  // Compatibility aliases
+  int get placedCount => inquiringCount;
   int get confirmedCount => respondedCount;
-  int get reservedCount => completedCount;
-  int get pendingCount => inquiringCount;
-  int get readyCount => completedCount;
+  int get installedCount => completedCount;
 
-  /// Active ongoing inquiries (Inquired/Submitted + Responded).
+  /// Active ongoing inquiries (Unpaid + Placed + Confirmed).
   /// Excludes completed inquiries so completed conversations immediately reduce or remove the Inquiries tab badge!
   List<TireInquiry> get activeInquiries => (_isStaffViewer ? staffInquiries : customerInquiries)
       .where((i) =>
+          i.status == InquiryStatus.unpaid ||
           i.status == InquiryStatus.submitted ||
           i.status == InquiryStatus.responded)
       .toList();
@@ -420,7 +633,7 @@ class InquiryController extends GetxController {
       }
     } catch (_) {}
 
-    final inquiryId = 'INQ-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    final inquiryId = 'ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     final unitPrice = isSetOfFour ? tire.priceInPhp * 0.90 : tire.priceInPhp;
 
     final totalTires = isSetOfFour ? quantity * 4 : quantity;
@@ -432,22 +645,19 @@ class InquiryController extends GetxController {
         );
 
     final startingBuffer = StringBuffer();
-    startingBuffer.writeln('Hi! I would like to inquire about this tire:');
+    startingBuffer.writeln('Treadly Order Details:');
+    startingBuffer.writeln('• Order ID: $inquiryId');
     startingBuffer.writeln('• Product: ${tire.brand} ${tire.model} (${tire.size})');
     final qtyText = isSetOfFour
         ? 'Set of 4 (${quantity * 4} pcs)'
         : '$quantity Tire${quantity > 1 ? 's' : ''}';
     startingBuffer.writeln('• Quantity: $qtyText');
-    startingBuffer.writeln('• Estimated Total: ₱$formattedTotal');
-    final resolvedVehicle = vehicleModel.trim().isEmpty ? 'General Vehicle' : vehicleModel.trim();
-    if (resolvedVehicle != 'General Vehicle' && resolvedVehicle != 'Not specified') {
-      startingBuffer.writeln('• Vehicle: $resolvedVehicle');
-    }
-    final resolvedDate = preferredDate.trim().isEmpty ? 'As soon as available' : preferredDate.trim();
-    startingBuffer.writeln('• Preferred Schedule: $resolvedDate');
-    startingBuffer.writeln('• Branch: ${branch.name}');
+    startingBuffer.writeln('• Total Amount: ₱$formattedTotal');
+    startingBuffer.writeln('• Workshop: ${branch.name}');
+    startingBuffer.writeln('• Bay Service: Drive-in Installation & Wheel Balancing');
+    startingBuffer.writeln('• Status: Unpaid (Pending Payment)');
     if (notes.trim().isNotEmpty) {
-      startingBuffer.writeln('\nNote: ${notes.trim()}');
+      startingBuffer.writeln('\nCustomer Note: ${notes.trim()}');
     }
 
     final initialMessages = <InquiryMessage>[
@@ -481,7 +691,7 @@ class InquiryController extends GetxController {
       vehicleModel: vehicleModel.trim().isEmpty ? 'General Vehicle' : vehicleModel.trim(),
       preferredDate: preferredDate.trim().isEmpty ? 'As soon as available' : preferredDate.trim(),
       notes: notes.trim(),
-      status: InquiryStatus.submitted, // Stage 1: Inquiry submitted
+      status: InquiryStatus.unpaid, // Initial status is UNPAID until Pay Now is completed
       messages: initialMessages,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -492,6 +702,38 @@ class InquiryController extends GetxController {
     _syncInquiryToFirestore(newInquiry);
 
     return newInquiry;
+  }
+
+  /// Customer marks an order as paid, changing status to Placed (submitted)
+  Future<void> markOrderAsPaid(String inquiryId, {String paymentMethod = 'GCash'}) async {
+    final idx = inquiries.indexWhere((i) => i.id == inquiryId);
+    if (idx == -1) return;
+
+    final existing = inquiries[idx];
+    final updatedMessages = List<InquiryMessage>.from(existing.effectiveMessages);
+    final formattedTotal = existing.formattedTotalPrice;
+    updatedMessages.add(
+      InquiryMessage(
+        id: 'MSG-${DateTime.now().millisecondsSinceEpoch}',
+        senderId: existing.userId,
+        senderName: existing.customerName,
+        senderRole: 'customer',
+        text: 'Payment Received: $formattedTotal paid via $paymentMethod.\nOrder status is now Placed and queued for workshop confirmation.',
+        timestamp: DateTime.now(),
+        isRead: false,
+      ),
+    );
+
+    final updated = existing.copyWith(
+      status: InquiryStatus.submitted, // Transition to Placed
+      messages: updatedMessages,
+      updatedAt: DateTime.now(),
+    );
+
+    inquiries[idx] = updated;
+    inquiries.refresh();
+    await _persistLocalInquiries();
+    _syncInquiryToFirestore(updated);
   }
 
   // ===========================================================================
@@ -885,8 +1127,10 @@ class InquiryController extends GetxController {
         'Action Prohibited',
         'Completed inquiries cannot be cancelled.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceElevated,
-        colorText: Colors.white,
+        backgroundColor: AppTheme.surfaceDark,
+        colorText: AppTheme.textPrimary,
+        borderColor: AppTheme.borderDark,
+        borderWidth: 1,
       );
       return;
     }

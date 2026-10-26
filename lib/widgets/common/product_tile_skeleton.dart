@@ -56,7 +56,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
     return AnimatedBuilder(
       animation: _shimmerAnim,
       builder: (context, child) {
-        final shimmerColor = Colors.white.withValues(alpha: _shimmerAnim.value);
+        final shimmerColor = const Color(0xFFE2E8F0).withValues(alpha: 0.4 + (_shimmerAnim.value * 5).clamp(0.0, 0.6));
 
         return Container(
           decoration: BoxDecoration(
@@ -111,7 +111,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.04),
+                      color: AppTheme.borderDark,
                     ),
                   ),
                 ),

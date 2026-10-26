@@ -86,7 +86,7 @@ class _ProductViewState extends State<ProductView> {
         backgroundColor: AppTheme.bgDark,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textPrimary, size: 20),
           onPressed: () {
             NavigationService.goBackOrHome(context, targetTab: 0);
           },
@@ -98,7 +98,7 @@ class _ProductViewState extends State<ProductView> {
             fontSize: 16,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.0,
-            color: Colors.white,
+            color: AppTheme.textPrimary,
           ),
         ),
         centerTitle: true,
@@ -116,7 +116,7 @@ class _ProductViewState extends State<ProductView> {
                 gradient: const RadialGradient(
                   center: Alignment.center,
                   radius: 0.8,
-                  colors: [Color(0xFF222836), Color(0xFF11141A)],
+                  colors: [Color(0xFFFFFFFF), Color(0xFFF1F5F9)],
                 ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: AppTheme.borderDark),
@@ -133,7 +133,7 @@ class _ProductViewState extends State<ProductView> {
                         width: 140,
                         height: 140,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.04),
+                          color: AppTheme.inputBg,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -157,38 +157,25 @@ class _ProductViewState extends State<ProductView> {
                   // Badges row
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentOrange.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.3)),
-                        ),
-                        child: Text(
-                          _tire.season.toUpperCase(),
-                          style: const TextStyle(
-                            color: AppTheme.accentOrange,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
+                      Text(
+                        _tire.season.toUpperCase(),
+                        style: const TextStyle(
+                          color: AppTheme.accentOrange,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppTheme.borderDark),
-                        ),
-                        child: Text(
-                          _tire.size,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      const Text(
+                        '  •  ',
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      ),
+                      Text(
+                        _tire.size,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const Spacer(),
@@ -199,7 +186,7 @@ class _ProductViewState extends State<ProductView> {
                           Text(
                             '${_tire.rating}',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
@@ -234,7 +221,7 @@ class _ProductViewState extends State<ProductView> {
                       fontFamily: 'Outfit',
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       height: 1.15,
                     ),
                   ),
@@ -251,7 +238,7 @@ class _ProductViewState extends State<ProductView> {
                           fontFamily: 'Outfit',
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -311,7 +298,7 @@ class _ProductViewState extends State<ProductView> {
                                 child: Text(
                                   'Single Tire',
                                   style: TextStyle(
-                                    color: !_isSetOfFour ? Colors.white : AppTheme.textSecondary,
+                                    color: !_isSetOfFour ? AppTheme.accentOrange : AppTheme.textSecondary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
                                   ),
@@ -353,27 +340,19 @@ class _ProductViewState extends State<ProductView> {
                                       Text(
                                         'Set of 4',
                                         style: TextStyle(
-                                          color: _isSetOfFour ? Colors.white : AppTheme.textSecondary,
+                                          color: _isSetOfFour ? AppTheme.accentOrange : AppTheme.textSecondary,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
                                         ),
                                       ),
                                       const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.accentOrange.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.4)),
-                                        ),
-                                        child: const Text(
-                                          'BUNDLE',
-                                          style: TextStyle(
-                                            color: AppTheme.accentOrange,
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 0.5,
-                                          ),
+                                      const Text(
+                                        '10% OFF',
+                                        style: TextStyle(
+                                          color: AppTheme.accentOrange,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.5,
                                         ),
                                       ),
                                     ],
@@ -395,7 +374,7 @@ class _ProductViewState extends State<ProductView> {
                       fontFamily: 'Outfit',
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -426,7 +405,7 @@ class _ProductViewState extends State<ProductView> {
                         fontFamily: 'Outfit',
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -449,7 +428,7 @@ class _ProductViewState extends State<ProductView> {
                         fontFamily: 'Outfit',
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -466,7 +445,7 @@ class _ProductViewState extends State<ProductView> {
                           ),
                           child: Text(
                             car,
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 11, fontWeight: FontWeight.w600),
                           ),
                         );
                       }).toList(),
@@ -499,19 +478,19 @@ class _ProductViewState extends State<ProductView> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.remove, size: 16, color: Colors.white),
+                      icon: const Icon(Icons.remove, size: 16, color: AppTheme.textPrimary),
                       onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
                     ),
                     Text(
                       '$_quantity',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                      icon: const Icon(Icons.add, size: 16, color: AppTheme.textPrimary),
                       onPressed: (!_tire.isOutOfStock && _quantity < (_isSetOfFour ? (_tire.stock ~/ 4) : _tire.stock))
                           ? () => setState(() => _quantity++)
                           : null,
@@ -526,7 +505,7 @@ class _ProductViewState extends State<ProductView> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _tire.isOutOfStock ? AppTheme.surfaceElevated : AppTheme.accentOrange,
-                    foregroundColor: _tire.isOutOfStock ? const Color(0xFF64748B) : Colors.black,
+                    foregroundColor: _tire.isOutOfStock ? const Color(0xFF64748B) : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -551,7 +530,7 @@ class _ProductViewState extends State<ProductView> {
                           _showInquirySheet(context);
                         },
                   child: Text(
-                    _tire.isOutOfStock ? 'OUT OF STOCK' : 'Inquire',
+                    _tire.isOutOfStock ? 'OUT OF STOCK' : 'Order',
                     style: const TextStyle(
                       fontFamily: 'Outfit',
                       fontWeight: FontWeight.w900,
@@ -653,7 +632,7 @@ class _ProductViewState extends State<ProductView> {
                               fontFamily: 'Outfit',
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -668,28 +647,14 @@ class _ProductViewState extends State<ProductView> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _isSetOfFour
-                                  ? AppTheme.accentOrange.withValues(alpha: 0.15)
-                                  : Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: _isSetOfFour
-                                    ? AppTheme.accentOrange.withValues(alpha: 0.4)
-                                    : AppTheme.borderDark,
-                              ),
-                            ),
-                            child: Text(
-                              _isSetOfFour
-                                  ? 'Set of 4 Tires (${_quantity * 4} pcs) • Bundle Inquiry'
-                                  : '$_quantity Single Tire${_quantity > 1 ? 's' : ''}',
-                              style: TextStyle(
-                                color: _isSetOfFour ? AppTheme.accentOrange : const Color(0xFFCBD5E1),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          Text(
+                            _isSetOfFour
+                                ? 'Set of 4 Tires (${_quantity * 4} pcs) • 10% Bundle Discount'
+                                : '$_quantity Single Tire${_quantity > 1 ? 's' : ''}',
+                            style: TextStyle(
+                              color: _isSetOfFour ? AppTheme.accentOrange : const Color(0xFFCBD5E1),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -723,7 +688,7 @@ class _ProductViewState extends State<ProductView> {
                             _formatPrice(originalTotal),
                             style: TextStyle(
                               fontFamily: 'Outfit',
-                              color: _isSetOfFour ? const Color(0xFF94A3B8) : Colors.white,
+                              color: _isSetOfFour ? const Color(0xFF94A3B8) : AppTheme.textPrimary,
                               fontSize: 13,
                               fontWeight: _isSetOfFour ? FontWeight.normal : FontWeight.bold,
                               decoration: _isSetOfFour ? TextDecoration.lineThrough : null,
@@ -766,7 +731,7 @@ class _ProductViewState extends State<ProductView> {
                           const Text(
                             'Estimated Total',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -799,7 +764,7 @@ class _ProductViewState extends State<ProductView> {
                 const Text(
                   'Note',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -808,7 +773,7 @@ class _ProductViewState extends State<ProductView> {
                 TextField(
                   controller: notesController,
                   maxLines: 2,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
                   decoration: InputDecoration(
                     hintText: 'Add a note or inquiry details for the shop...',
                     hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
@@ -837,7 +802,7 @@ class _ProductViewState extends State<ProductView> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accentOrange,
-                      foregroundColor: Colors.black,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -876,12 +841,13 @@ class _ProductViewState extends State<ProductView> {
                       if (context.mounted && Navigator.canPop(context)) {
                         Navigator.pop(context); // Close product details page
                       }
+                      inquiryCtrl.selectedFilter.value = 'Unpaid';
                       if (Get.isRegistered<NavigationController>()) {
-                        Get.find<NavigationController>().changeTab(0); // Return to home page (Tab 0)
+                        Get.find<NavigationController>().changeTab(2); // Return to Orders tab (Tab 2)
                       }
                     },
                     child: const Text(
-                      'Submit',
+                      'Confirm Order',
                       style: TextStyle(
                         fontFamily: 'Outfit',
                         fontWeight: FontWeight.w900,
@@ -918,7 +884,7 @@ class _ProductViewState extends State<ProductView> {
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.bold),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

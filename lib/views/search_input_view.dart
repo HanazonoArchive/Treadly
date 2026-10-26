@@ -143,7 +143,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                               onSubmitted: _submitSearch,
                               onChanged: (_) => setState(() {}),
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.textPrimary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -220,7 +220,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                               const Text(
                                 'Recent Searches',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary,
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.3,
@@ -274,7 +274,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                                         Text(
                                           keyword,
                                           style: const TextStyle(
-                                            color: Color(0xFFCBD5E1),
+                                            color: AppTheme.textPrimary,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -304,7 +304,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                     const Text(
                       'Popular Searches',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.3,
@@ -342,7 +342,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                                 Text(
                                   keyword,
                                   style: const TextStyle(
-                                    color: Color(0xFFCBD5E1),
+                                    color: AppTheme.textPrimary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),

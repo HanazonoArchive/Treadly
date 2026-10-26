@@ -166,7 +166,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                 return Container(
                   height: 140,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF090E17),
+                    color: AppTheme.inputBg,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.borderDark, width: 1.2),
                   ),
@@ -186,7 +186,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                           Container(
                             width: 1,
                             height: 110,
-                            color: Colors.white.withValues(alpha: 0.05),
+                            color: AppTheme.inputBg,
                           ),
                           // Right Panel: Side Profile (Rim & Sidewall)
                           Expanded(
@@ -291,7 +291,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                         const Text(
                           'In-Stock Tires Only',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
                           ),
@@ -301,7 +301,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                           activeThumbColor: AppTheme.accentOrange,
                           activeTrackColor: AppTheme.accentOrange.withValues(alpha: 0.3),
                           inactiveThumbColor: AppTheme.textSecondary,
-                          inactiveTrackColor: Colors.white.withValues(alpha: 0.05),
+                          inactiveTrackColor: AppTheme.inputBg,
                           onChanged: (val) => controller.inStockOnly.value = val,
                         ),
                       ],
@@ -318,8 +318,8 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: hasMatches ? AppTheme.accentOrange : const Color(0xFF334155),
-                      foregroundColor: hasMatches ? Colors.black : Colors.white70,
+                      backgroundColor: hasMatches ? AppTheme.accentOrange : const Color(0xFF94A3B8),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 0,
@@ -389,7 +389,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                 child: Text(
                   itemBuilder(index),
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Outfit',

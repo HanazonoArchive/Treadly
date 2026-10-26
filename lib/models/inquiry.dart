@@ -1,5 +1,6 @@
 /// Represents the lifecycle status of a tire customer inquiry
 enum InquiryStatus {
+  unpaid,
   submitted,
   responded,
   completed,
@@ -14,6 +15,8 @@ enum InquiryStatus {
 extension InquiryStatusX on InquiryStatus {
   String get value {
     switch (this) {
+      case InquiryStatus.unpaid:
+        return 'unpaid';
       case InquiryStatus.submitted:
         return 'submitted';
       case InquiryStatus.responded:
@@ -27,12 +30,14 @@ extension InquiryStatusX on InquiryStatus {
 
   String get label {
     switch (this) {
+      case InquiryStatus.unpaid:
+        return 'Unpaid';
       case InquiryStatus.submitted:
-        return 'Inquiry submitted';
+        return 'Placed';
       case InquiryStatus.responded:
-        return 'Responded';
+        return 'Confirmed';
       case InquiryStatus.completed:
-        return 'Completed';
+        return 'Installed';
       case InquiryStatus.cancelled:
         return 'Cancelled';
     }
@@ -41,6 +46,8 @@ extension InquiryStatusX on InquiryStatus {
   /// 1-based stage index for the visual connected stepper (1 to 3)
   int get stageStep {
     switch (this) {
+      case InquiryStatus.unpaid:
+        return 0;
       case InquiryStatus.submitted:
         return 1;
       case InquiryStatus.responded:
@@ -54,10 +61,14 @@ extension InquiryStatusX on InquiryStatus {
 
   static InquiryStatus fromString(String? val) {
     switch (val?.toLowerCase()) {
+      case 'unpaid':
+        return InquiryStatus.unpaid;
       case 'responded':
       case 'confirmed':
+      case 'prepped in bay':
         return InquiryStatus.responded;
       case 'completed':
+      case 'installed':
       case 'reserved':
       case 'ready':
       case 'ready_for_pickup':
@@ -65,6 +76,8 @@ extension InquiryStatusX on InquiryStatus {
       case 'cancelled':
         return InquiryStatus.cancelled;
       case 'submitted':
+      case 'placed':
+      case 'order placed':
       case 'inquiring':
       case 'pending':
       default:
@@ -201,6 +214,14 @@ class TireInquiry {
   double get totalPrice => unitPrice * (isSetOfFour ? quantity * 4 : quantity);
   int get totalTiresCount => isSetOfFour ? quantity * 4 : quantity;
 
+  String get orderNumber {
+    final cleanId = id.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
+    if (cleanId.length >= 5) {
+      return 'TRD-${cleanId.substring(cleanId.length - 5)}';
+    }
+    return 'TRD-$cleanId';
+  }
+
   bool get isClosed => status == InquiryStatus.completed || status == InquiryStatus.cancelled;
 
   bool get hasUnreadStaffMessage => !isClosed && messages.any((m) => m.isStaff && !m.isRead);
@@ -294,26 +315,33 @@ class TireInquiry {
     return false;
   }
 
-  /// Formats the initial introductory inquiry message (Facebook Marketplace style)
-  /// containing the tire specs, quantity, estimated total, vehicle, schedule, branch, and customer note.
+  String get orderId {
+    if (id.startsWith('INQ-')) {
+      return id.replaceFirst('INQ-', 'ORD-');
+    }
+    if (!id.startsWith('ORD-')) {
+      return 'ORD-$id';
+    }
+    return id;
+  }
+
+  /// Formats the initial introductory order message
+  /// containing tire specs, quantity, total amount, workshop, and customer note.
   String get startingInquiryMessageText {
     final buffer = StringBuffer();
-    buffer.writeln('Hi! I would like to inquire about this tire:');
+    buffer.writeln('Treadly Order Details:');
+    buffer.writeln('• Order ID: $orderId');
     buffer.writeln('• Product: $tireBrand $tireModel ($tireSize)');
     final qtyText = isSetOfFour
         ? 'Set of 4 (${quantity * 4} pcs)'
         : '$quantity Tire${quantity > 1 ? 's' : ''}';
     buffer.writeln('• Quantity: $qtyText');
-    buffer.writeln('• Estimated Total: $formattedTotalPrice');
-    if (vehicleModel.isNotEmpty && vehicleModel != 'Not specified') {
-      buffer.writeln('• Vehicle: $vehicleModel');
-    }
-    if (preferredDate.isNotEmpty) {
-      buffer.writeln('• Preferred Schedule: $preferredDate');
-    }
-    buffer.writeln('• Branch: $branchName');
+    buffer.writeln('• Total Amount: $formattedTotalPrice');
+    buffer.writeln('• Workshop: $branchName');
+    buffer.writeln('• Bay Service: Drive-in Installation & Wheel Balancing');
+    buffer.writeln('• Status: ${status.label}');
     if (notes.isNotEmpty) {
-      buffer.writeln('\nNote: $notes');
+      buffer.writeln('\nCustomer Note: $notes');
     }
     return buffer.toString().trim();
   }
@@ -406,6 +434,7 @@ class TireInquiry {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'order_id': orderId,
         'user_id': userId,
         'customer_name': customerName,
         'customer_phone': customerPhone,
@@ -442,8 +471,12 @@ class TireInquiry {
             .toList()
         : [];
 
+    final rawId = json['id'] as String? ?? '';
+    final rawOrderId = json['order_id'] as String?;
+    final resolvedId = (rawOrderId != null && rawOrderId.isNotEmpty) ? rawOrderId : rawId;
+
     return TireInquiry(
-      id: json['id'] as String? ?? '',
+      id: resolvedId,
       userId: json['user_id'] as String? ?? 'guest',
       customerName: json['customer_name'] as String? ?? 'Driver',
       customerPhone: json['customer_phone'] as String? ?? '',

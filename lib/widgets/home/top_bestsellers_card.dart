@@ -37,21 +37,17 @@ class TopBestsellersCard extends StatelessWidget {
         return Container(
           height: 170,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1D222E), Color(0xFF13161E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppTheme.surfaceDark,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.accentOrange.withValues(alpha: 0.25),
+              color: AppTheme.borderDark,
               width: 1,
             ),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Color(0x0A000000),
+                blurRadius: 16,
+                offset: Offset(0, 6),
               ),
             ],
           ),
@@ -86,7 +82,7 @@ class TopBestsellersCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isActive
                               ? AppTheme.accentOrange
-                              : Colors.white.withValues(alpha: 0.25),
+                              : AppTheme.borderDark,
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
@@ -144,7 +140,7 @@ class TopBestsellersCard extends StatelessWidget {
                 Text(
                   tire.model,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     height: 1.15,
@@ -162,7 +158,7 @@ class TopBestsellersCard extends StatelessWidget {
                     Text(
                       tire.formattedPrice,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'Outfit',
@@ -198,7 +194,7 @@ class TopBestsellersCard extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.04),
+                        color: AppTheme.inputBg,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(

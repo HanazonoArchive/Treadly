@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../models/shop_branch.dart';
 import '../models/tire.dart';
 
 /// FirebaseSyncService manages reading and writing data to Cloud Firestore.
@@ -83,6 +84,33 @@ class FirebaseSyncService {
         await _db.collection('tires').doc(id).delete();
       } catch (_) {}
     }
+    await cleanDeprecatedCollections();
+  }
+
+  /// Purges dead collections (user_vouchers, user_wallets, vouchers, wallets) from Firestore
+  Future<void> cleanDeprecatedCollections() async {
+    const deprecatedCollections = [
+      'user_vouchers',
+      'user_wallets',
+      'vouchers',
+      'wallets',
+    ];
+
+    for (final col in deprecatedCollections) {
+      try {
+        final snapshot = await _db.collection(col).get();
+        for (final doc in snapshot.docs) {
+          try {
+            await doc.reference.delete();
+          } catch (_) {}
+        }
+        if (snapshot.docs.isNotEmpty) {
+          debugPrint('[FirebaseSyncService] Deleted ${snapshot.docs.length} documents from $col in Firestore.');
+        }
+      } catch (e) {
+        debugPrint('[FirebaseSyncService] Note checking $col: $e');
+      }
+    }
   }
 
   /// Performs a complete mirror sync of tire catalog and demo profiles to Firestore.
@@ -92,7 +120,11 @@ class FirebaseSyncService {
       // 1. Clean legacy IDs from tires collection
       await cleanLegacyFirestoreTires();
 
-      // 2. Sync full 15 modern tires
+      // 2. Sync Flagship Workshop and clean legacy multi-branch documents
+      await syncFlagshipWorkshop();
+      report['workshop_synced'] = ShopBranch.flagship.name;
+
+      // 3. Sync full 15 modern tires
       List<Tire> tiresToSync = customTires ?? [];
       if (tiresToSync.isEmpty) {
         try {
@@ -123,9 +155,36 @@ class FirebaseSyncService {
     }
   }
 
+  /// Syncs the Treadly flagship workshop to Firestore `shop_branches` and cleans deprecated branch documents
+  Future<void> syncFlagshipWorkshop() async {
+    try {
+      await _db
+          .collection('shop_branches')
+          .doc(ShopBranch.flagship.id)
+          .set(ShopBranch.flagship.toJson(), SetOptions(merge: true));
+
+      const legacyBranchIds = [
+        'branch-qc-main',
+        'branch-makati-south',
+        'branch-alabang-west',
+        'branch-pasig-east',
+      ];
+      for (final id in legacyBranchIds) {
+        try {
+          await _db.collection('shop_branches').doc(id).delete();
+        } catch (_) {}
+      }
+      debugPrint('[FirebaseSyncService] Synced Flagship Workshop & cleaned legacy branches in Firestore.');
+    } catch (e) {
+      debugPrint('[FirebaseSyncService] Error syncing flagship workshop to Firestore: $e');
+    }
+  }
+
   /// Pushes test documents to live Firestore demo collections
   Future<String?> testPushLiveDemoData() async {
     try {
+      // Sync Flagship Workshop
+      await syncFlagshipWorkshop();
       // 1. tires collection (Treadly Tire Catalog with full 15 models and rich schema)
       try {
         final jsonString = await rootBundle.loadString('assets/data/tires.json');

@@ -145,10 +145,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                 backgroundColor: AppTheme.bgDark,
                 elevation: 0,
                 leading: IconButton(
-                  icon: const Icon(LucideIcons.chevronLeft, color: Colors.white),
+                  icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.textPrimary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                title: const Text('Inquiry Not Found', style: TextStyle(color: Colors.white)),
+                title: const Text('Inquiry Not Found', style: TextStyle(color: AppTheme.textPrimary)),
               ),
               body: const Center(
                 child: Text('This inquiry is no longer available.', style: TextStyle(color: AppTheme.textSecondary)),
@@ -170,10 +170,10 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   backgroundColor: AppTheme.bgDark,
                   elevation: 0,
                   leading: IconButton(
-                    icon: const Icon(LucideIcons.chevronLeft, color: Colors.white),
+                    icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.textPrimary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  title: const Text('Inquiry Claimed', style: TextStyle(color: Colors.white)),
+                  title: const Text('Inquiry Claimed', style: TextStyle(color: AppTheme.textPrimary)),
                 ),
                 body: Center(
                   child: Padding(
@@ -196,7 +196,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                             fontFamily: 'Outfit',
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -213,7 +213,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.accentOrange,
-                            foregroundColor: Colors.black,
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           ),
@@ -328,15 +328,15 @@ class _InquiryChatViewState extends State<InquiryChatView> {
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 24),
+            icon: const Icon(LucideIcons.chevronLeft, color: AppTheme.textPrimary, size: 24),
           ),
           const SizedBox(width: 4),
           Expanded(
             child: Text(
-              inq.id.startsWith('#') ? inq.id : '#${inq.id}',
+              inq.orderId.startsWith('#') ? inq.orderId : '#${inq.orderId}',
               style: const TextStyle(
                 fontFamily: 'Outfit',
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
@@ -346,7 +346,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
           // Staff Action: Check icon button representing Completed with confirmation modal
           if (isStaff && inq.status != InquiryStatus.cancelled) ...[
             IconButton(
-              tooltip: inq.status == InquiryStatus.completed ? 'Inquiry Completed' : 'Complete Inquiry',
+              tooltip: inq.status == InquiryStatus.completed ? 'Order Completed' : 'Complete Order',
               icon: Icon(
                 inq.status == InquiryStatus.completed ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
                 color: const Color(0xFF10B981),
@@ -394,7 +394,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               child: Text(
                 '${inq.tireBrand} ${inq.tireModel} (${inq.tireSize}) • ${inq.formattedTotalPrice}',
                 style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
+                  color: AppTheme.textPrimary,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -417,7 +417,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             child: Container(
               width: 48,
               height: 48,
-              color: Colors.white.withValues(alpha: 0.04),
+              color: AppTheme.inputBg,
               padding: const EdgeInsets.all(3),
               child: Image.asset(
                 inq.tireImage,
@@ -437,7 +437,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                 Text(
                   '${inq.tireBrand} ${inq.tireModel}',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 13.5,
                   ),
@@ -488,7 +488,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               isStaff ? 'Start Staff Response' : 'Conversation Started',
               style: const TextStyle(
                 fontFamily: 'Outfit',
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -584,7 +584,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   Text(
                     msg.text,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 13.5,
                       height: 1.4,
                     ),
@@ -690,7 +690,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                 'Complete Inquiry?',
                 style: TextStyle(
                   fontFamily: 'Outfit',
-                  color: Colors.white,
+                  color: AppTheme.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -744,14 +744,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       onPressed: () {
                         controller.updateInquiryStatus(inq.id, InquiryStatus.completed);
                         Get.back();
-                        Get.snackbar(
-                          'Inquiry Completed',
-                          'Inquiry #${inq.id} marked as completed!',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: AppTheme.surfaceElevated,
-                          colorText: AppTheme.statusCompleted,
-                          icon: const Icon(Icons.check_circle_rounded, color: AppTheme.statusCompleted),
-                        );
                       },
                       child: const Text(
                         'Yes, Complete',
@@ -771,7 +763,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
-  /// Modal confirmation dialog for reopening completed inquiries
+  /// Modal confirmation dialog for reopening completed orders
   void _showReopenConfirmation(
     BuildContext context,
     TireInquiry inq,
@@ -791,17 +783,17 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Reopen Inquiry?',
+                'Reopen Order?',
                 style: TextStyle(
                   fontFamily: 'Outfit',
-                  color: Colors.white,
+                  color: AppTheme.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'Inquiry #${inq.id} is currently completed. Would you like to reopen this inquiry to Responded state?',
+                'Order #${inq.orderId} is currently completed. Would you like to reopen this order to Confirmed state?',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFF94A3B8),
@@ -836,7 +828,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.accentOrange,
-                        foregroundColor: Colors.black,
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -847,11 +839,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                         controller.updateInquiryStatus(inq.id, InquiryStatus.responded);
                         Get.back();
                         Get.snackbar(
-                          'Inquiry Reopened',
-                          'Inquiry #${inq.id} is now open in Responded state.',
+                          'Order Reopened',
+                          'Order #${inq.orderId} is now open in Confirmed state.',
                           snackPosition: SnackPosition.BOTTOM,
                           backgroundColor: AppTheme.surfaceElevated,
-                          colorText: Colors.white,
+                          colorText: AppTheme.textPrimary,
                         );
                       },
                       child: const Text(
@@ -893,7 +885,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               ),
               child: TextField(
                 controller: _textCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13.5),
                 decoration: const InputDecoration(
                   hintText: 'Type your message...',
                   hintStyle: TextStyle(color: Color(0xFF64748B), fontSize: 13),
@@ -917,7 +909,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               child: const Center(
                 child: Icon(
                   LucideIcons.send,
-                  color: Colors.black,
+                  color: Colors.white,
                   size: 18,
                 ),
               ),
@@ -971,7 +963,7 @@ class TopBarMessageButton extends StatelessWidget {
           children: [
             const Icon(
               LucideIcons.messageSquare,
-              color: Colors.white,
+              color: AppTheme.textPrimary,
               size: 22,
             ),
             if (unread > 0)

@@ -46,9 +46,9 @@ class MyApp extends StatelessWidget {
       useInheritedMediaQuery: true,
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
-      theme: AppTheme.dark,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.dark,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.light,
+      themeMode: ThemeMode.light,
       initialRoute: '/',
       getPages: [
         GetPage(name: '/', page: () => HomeView()),

@@ -92,59 +92,25 @@ class ShopBranch {
     );
   }
 
-  /// Curated mock branches for Treadly Single-Shop business
-  static const List<ShopBranch> defaultBranches = [
-    ShopBranch(
-      id: 'branch-qc-main',
-      name: 'Treadly Auto Hub (Main Flagship)',
-      address: '108 Quezon Avenue, Brgy. Paligsahan',
-      city: 'Quezon City',
-      distanceText: '1.2 km away',
-      phone: '+63 (02) 8924-8833',
-      operatingHours: 'Mon - Sat: 8:00 AM - 6:00 PM',
-      availableServices: [
-        'Tire Mounting',
-        'Computerized Wheel Alignment',
-        'High-Speed Balancing',
-        'Nitrogen Inflation',
-      ],
-      isMainBranch: true,
-      latitude: 14.6366,
-      longitude: 121.0189,
-    ),
-    ShopBranch(
-      id: 'branch-ortigas',
-      name: 'Treadly Hub (East Branch)',
-      address: 'Lot 4 Ortigas Ave Ext, Rosario',
-      city: 'Pasig City',
-      distanceText: '5.8 km away',
-      phone: '+63 (02) 8655-4120',
-      operatingHours: 'Mon - Sun: 8:30 AM - 6:30 PM',
-      availableServices: [
-        'Tire Mounting',
-        'Wheel Balancing',
-        'Tire Repair & Patching',
-      ],
-      isMainBranch: false,
-      latitude: 14.5869,
-      longitude: 121.0850,
-    ),
-    ShopBranch(
-      id: 'branch-alabang',
-      name: 'Treadly Hub (South Branch)',
-      address: 'Westgate Center, Commerce Ave, Alabang',
-      city: 'Muntinlupa City',
-      distanceText: '14.5 km away',
-      phone: '+63 (02) 8809-5561',
-      operatingHours: 'Mon - Sat: 9:00 AM - 7:00 PM',
-      availableServices: [
-        'Tire Mounting',
-        'Laser Wheel Alignment',
-        'Performance Wheel Balancing',
-      ],
-      isMainBranch: false,
-      latitude: 14.4227,
-      longitude: 121.0264,
-    ),
-  ];
+  /// The single flagship store entity for Treadly Single-Business model
+  static const ShopBranch flagship = ShopBranch(
+    id: 'treadly-flagship',
+    name: 'Treadly Auto & Tire Center',
+    address: '108 Quezon Avenue, Brgy. Paligsahan',
+    city: 'Quezon City',
+    distanceText: 'Flagship Workshop Bay',
+    phone: '+63 (02) 8924-8833',
+    operatingHours: 'Mon - Sat: 8:00 AM - 6:00 PM',
+    availableServices: [
+      'Tire Mounting & Fitting',
+      'Computerized Wheel Alignment',
+      'High-Speed Dynamic Balancing',
+      'Nitrogen Inflation & Bay Inspection',
+    ],
+    isMainBranch: true,
+    latitude: 14.6366,
+    longitude: 121.0189,
+  );
+
+  static const List<ShopBranch> defaultBranches = [flagship];
 }
