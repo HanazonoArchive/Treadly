@@ -142,8 +142,8 @@ class _InquiriesViewState extends State<InquiriesView> {
                                   filter,
                                   style: TextStyle(
                                     color: isSelected
-                                        ? Colors.black
-                                        : const Color(0xFF94A3B8),
+                                        ? Colors.white
+                                        : const Color(0xFF64748B),
                                     fontWeight: isSelected
                                         ? FontWeight.bold
                                         : FontWeight.w600,
@@ -159,7 +159,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.black
+                                          ? Colors.white
                                           : AppTheme.accentOrange,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -173,7 +173,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                                         style: TextStyle(
                                           color: isSelected
                                               ? AppTheme.accentOrange
-                                              : Colors.black,
+                                              : Colors.white,
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w900,
                                           height: 1,
@@ -850,14 +850,14 @@ class _InquiriesViewState extends State<InquiriesView> {
                           ? const Icon(
                               Icons.check,
                               size: 11,
-                              color: Colors.black,
+                              color: Colors.white,
                             )
                           : isCurrent
                           ? Container(
                               width: 6,
                               height: 6,
                               decoration: const BoxDecoration(
-                                color: Colors.black,
+                                color: Colors.white,
                                 shape: BoxShape.circle,
                               ),
                             )
@@ -1135,7 +1135,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                                     ),
                                     child: isSelected
                                         ? const Center(
-                                            child: Icon(Icons.check, size: 12, color: Colors.black),
+                                            child: Icon(Icons.check, size: 12, color: Colors.white),
                                           )
                                         : null,
                                   ),

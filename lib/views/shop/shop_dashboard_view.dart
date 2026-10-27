@@ -1686,7 +1686,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                         child: Text(
                           badgeCount > 9 ? '9+' : '$badgeCount',
                           style: const TextStyle(
-                            color: Colors.black,
+                            color: Colors.white,
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
                             height: 1,

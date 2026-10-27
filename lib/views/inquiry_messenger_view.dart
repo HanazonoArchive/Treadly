@@ -298,8 +298,8 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                         filter,
                         style: TextStyle(
                           color: isSelected
-                              ? Colors.black
-                              : const Color(0xFF94A3B8),
+                              ? Colors.white
+                              : const Color(0xFF64748B),
                           fontSize: 12,
                           fontWeight: isSelected
                               ? FontWeight.bold
@@ -315,7 +315,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.black
+                                ? Colors.white
                                 : AppTheme.accentOrange,
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -329,7 +329,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                               style: TextStyle(
                                 color: isSelected
                                     ? AppTheme.accentOrange
-                                    : Colors.black,
+                                    : Colors.white,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w900,
                                 height: 1,
@@ -603,7 +603,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                                   ? '9+'
                                   : '$displayUnreadCount',
                               style: const TextStyle(
-                                color: Colors.black,
+                                color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                                 height: 1,

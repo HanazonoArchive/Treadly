@@ -559,7 +559,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           child: const Text(
                             'STAFF',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: Colors.white,
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
@@ -982,7 +982,7 @@ class TopBarMessageButton extends StatelessWidget {
                     child: Text(
                       unread > 9 ? '9+' : '$unread',
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
                         height: 1,
