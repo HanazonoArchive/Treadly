@@ -166,63 +166,30 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                 return Container(
                   height: 140,
                   decoration: BoxDecoration(
-                    color: AppTheme.inputBg,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.borderDark, width: 1.2),
                   ),
-                  child: Stack(
+                  child: Row(
                     children: [
-                      // Dual CustomPainter Row
-                      Row(
-                        children: [
-                          // Left Panel: Front Stance (Width & Tread)
-                          Expanded(
-                            child: CustomPaint(
-                              painter: TireFrontPainter(width: w),
-                              child: Container(),
-                            ),
-                          ),
-                          // Subtle vertical divider between views
-                          Container(
-                            width: 1,
-                            height: 110,
-                            color: AppTheme.inputBg,
-                          ),
-                          // Right Panel: Side Profile (Rim & Sidewall)
-                          Expanded(
-                            child: CustomPaint(
-                              painter: TireSidePainter(rim: rim, ratio: r),
-                              child: Container(),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // View Labels at bottom corners
-                      const Positioned(
-                        bottom: 6,
-                        left: 12,
-                        child: Text(
-                          'FRONT STANCE',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
+                      // Left Panel: Front View (Width & Tread)
+                      Expanded(
+                        child: CustomPaint(
+                          painter: TireFrontPainter(width: w),
+                          child: Container(),
                         ),
                       ),
-                      const Positioned(
-                        bottom: 6,
-                        right: 12,
-                        child: Text(
-                          'SIDE PROFILE',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
+                      // Subtle vertical divider between views
+                      Container(
+                        width: 1,
+                        height: 110,
+                        color: const Color(0xFFE2E8F0),
+                      ),
+                      // Right Panel: Side View (Rim & Sidewall)
+                      Expanded(
+                        child: CustomPaint(
+                          painter: TireSidePainter(rim: rim, ratio: r),
+                          child: Container(),
                         ),
                       ),
                     ],
@@ -404,7 +371,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
   }
 }
 
-/// CustomPainter: Front Stance View (Tread Width & Grooves)
+/// CustomPainter: Front Stance View (Wireframe Tread Width & Grooves)
 class TireFrontPainter extends CustomPainter {
   final int? width;
 
@@ -413,37 +380,49 @@ class TireFrontPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final effectiveWidth = (width ?? 225).clamp(165, 335).toDouble();
-    // Normalize width between 165 and 335 -> visual width between 32 and 76 px
+    // Normalize width between 165 and 335 -> visual width between 34 and 76 px
     final norm = (effectiveWidth - 165) / 170.0;
-    final tireW = 32.0 + (norm * 44.0);
-    const tireH = 76.0;
+    final tireW = 34.0 + (norm * 42.0);
+    const tireH = 74.0;
 
-    final center = Offset(size.width / 2, size.height / 2 + 5);
+    final center = Offset(size.width / 2, size.height / 2 + 4);
     final tireRect = Rect.fromCenter(center: center, width: tireW, height: tireH);
-    final rrect = RRect.fromRectAndRadius(tireRect, const Radius.circular(8));
+    final rrect = RRect.fromRectAndRadius(tireRect, const Radius.circular(6));
 
-    // 1. Rubber background with subtle gradient
-    final rubberPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF334155), Color(0xFF1E293B), Color(0xFF0F172A)],
-      ).createShader(tireRect)
+    // 1. Crisp white background fill (wireframe canvas)
+    final fillPaint = Paint()
+      ..color = Colors.white
       ..style = PaintingStyle.fill;
-    canvas.drawRRect(rrect, rubberPaint);
+    canvas.drawRRect(rrect, fillPaint);
 
-    // 2. Tire outline border
-    final borderPaint = Paint()
-      ..color = const Color(0xFF475569)
+    // 2. Wireframe black outline
+    final linePaint = Paint()
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    canvas.drawRRect(rrect, borderPaint);
+      ..strokeWidth = 1.6;
+    canvas.drawRRect(rrect, linePaint);
 
-    // 3. Longitudinal Tread Grooves
+    // 3. Inner shoulder wireframe guide lines
+    final shoulderPaint = Paint()
+      ..color = const Color(0xFFCBD5E1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+      Offset(center.dx - tireW / 2 + 4, center.dy - tireH / 2 + 6),
+      Offset(center.dx - tireW / 2 + 4, center.dy + tireH / 2 - 6),
+      shoulderPaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx + tireW / 2 - 4, center.dy - tireH / 2 + 6),
+      Offset(center.dx + tireW / 2 - 4, center.dy + tireH / 2 - 6),
+      shoulderPaint,
+    );
+
+    // 4. Longitudinal Tread Wireframe Grooves
     final groovePaint = Paint()
-      ..color = const Color(0xFF070B12)
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 1.4;
 
     final grooveCount = tireW > 54 ? 3 : 2;
     for (int i = 1; i <= grooveCount; i++) {
@@ -455,28 +434,29 @@ class TireFrontPainter extends CustomPainter {
       );
     }
 
-    // 4. Caliper measurement brackets on top
+    // 5. Technical drafting measurement bracket on top
     final caliperY = center.dy - tireH / 2 - 8;
-    final caliperPaint = Paint()
-      ..color = const Color(0xFFF97316)
+    final draftingPaint = Paint()
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = 1.0;
 
     final leftX = center.dx - tireW / 2;
     final rightX = center.dx + tireW / 2;
 
-    canvas.drawLine(Offset(leftX, caliperY), Offset(rightX, caliperY), caliperPaint);
-    canvas.drawLine(Offset(leftX, caliperY - 3), Offset(leftX, caliperY + 3), caliperPaint);
-    canvas.drawLine(Offset(rightX, caliperY - 3), Offset(rightX, caliperY + 3), caliperPaint);
+    // Horizontal dimension line with end tick markers
+    canvas.drawLine(Offset(leftX, caliperY), Offset(rightX, caliperY), draftingPaint);
+    canvas.drawLine(Offset(leftX, caliperY - 3), Offset(leftX, caliperY + 3), draftingPaint);
+    canvas.drawLine(Offset(rightX, caliperY - 3), Offset(rightX, caliperY + 3), draftingPaint);
 
-    // Measurement text
+    // Measurement text in technical black
     final textSpan = TextSpan(
-      text: width != null ? '$width mm' : 'Any Width',
-      style: TextStyle(
+      text: width != null ? '$width mm' : 'Width',
+      style: const TextStyle(
         fontFamily: 'Outfit',
-        color: width != null ? const Color(0xFFF97316) : const Color(0xFF94A3B8),
-        fontSize: 9.5,
-        fontWeight: FontWeight.bold,
+        color: Color(0xFF0F172A),
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
       ),
     );
     final textPainter = TextPainter(
@@ -493,7 +473,7 @@ class TireFrontPainter extends CustomPainter {
   bool shouldRepaint(covariant TireFrontPainter oldDelegate) => oldDelegate.width != width;
 }
 
-/// CustomPainter: Side Profile View (Rim & Sidewall Ring)
+/// CustomPainter: Side Profile View (Wireframe Rim & Sidewall Ring)
 class TireSidePainter extends CustomPainter {
   final int? rim;
   final int? ratio;
@@ -504,94 +484,91 @@ class TireSidePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final effectiveRim = (rim ?? 18).clamp(13, 22).toDouble();
 
-    final center = Offset(size.width / 2, size.height / 2 + 5);
-    const outerRadius = 42.0;
+    final center = Offset(size.width / 2, size.height / 2 + 4);
+    const outerRadius = 40.0;
 
-    // Rim radius scales from 19.0 to 32.0 based on rim size (14" to 21")
+    // Rim radius scales from 18.0 to 30.0 based on rim size
     final rimNorm = (effectiveRim - 13) / 9.0;
-    final rimRadius = 19.0 + (rimNorm * 13.0);
+    final rimRadius = 18.0 + (rimNorm * 12.0);
 
-    // 1. Outer tire circle (black rubber)
-    final tirePaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Color(0xFF334155), Color(0xFF1E293B), Color(0xFF090E17)],
-        stops: [0.6, 0.85, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: outerRadius))
+    // 1. Fill background pure white
+    final fillPaint = Paint()
+      ..color = Colors.white
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, outerRadius, tirePaint);
+    canvas.drawCircle(center, outerRadius, fillPaint);
 
-    final tireBorder = Paint()
-      ..color = const Color(0xFF475569)
+    // 2. Outer tire circumference (wireframe black line)
+    final outerTirePaint = Paint()
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    canvas.drawCircle(center, outerRadius, tireBorder);
+      ..strokeWidth = 1.8;
+    canvas.drawCircle(center, outerRadius, outerTirePaint);
 
-    // 2. Rim Wheel (Alloy circle)
-    final rimPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF94A3B8), Color(0xFF475569), Color(0xFF334155)],
-      ).createShader(Rect.fromCircle(center: center, radius: rimRadius))
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, rimRadius, rimPaint);
-
-    final rimBorder = Paint()
+    // 3. Inner sidewall contour line (technical drafting wireframe)
+    final sidewallPaint = Paint()
       ..color = const Color(0xFFCBD5E1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawCircle(center, outerRadius - 4, sidewallPaint);
+
+    // 4. Rim lip ring (wireframe black line)
+    final rimPaint = Paint()
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
-    canvas.drawCircle(center, rimRadius, rimBorder);
+    canvas.drawCircle(center, rimRadius, rimPaint);
 
-    // 3. 5 Alloy Wheel Spokes
+    // 5. Wheel Spokes (clean geometric wireframe lines)
     final spokePaint = Paint()
-      ..color = const Color(0xFFCBD5E1)
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 1.4;
 
-    for (int i = 0; i < 5; i++) {
-      final angle = (i * 72.0 - 90.0) * (math.pi / 180.0);
+    const spokeCount = 5;
+    for (int i = 0; i < spokeCount; i++) {
+      final angle = (i * (360.0 / spokeCount) - 90.0) * (math.pi / 180.0);
       final spokeEnd = Offset(
-        center.dx + (rimRadius - 2) * math.cos(angle),
-        center.dy + (rimRadius - 2) * math.sin(angle),
+        center.dx + (rimRadius - 1) * math.cos(angle),
+        center.dy + (rimRadius - 1) * math.sin(angle),
       );
       canvas.drawLine(center, spokeEnd, spokePaint);
     }
 
-    // 4. Center Cap Hub
-    final hubPaint = Paint()
-      ..color = const Color(0xFF0F172A)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 5.5, hubPaint);
+    // 6. Hub Center Cap (wireframe ring and center point)
     final hubBorder = Paint()
-      ..color = const Color(0xFF38BDF8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawCircle(center, 5.5, hubBorder);
-
-    // 5. Caliper Measurement Callout on Top
-    final caliperY = center.dy - outerRadius - 8;
-    final caliperPaint = Paint()
-      ..color = const Color(0xFF38BDF8)
+      ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
+    canvas.drawCircle(center, 5.0, hubBorder);
+
+    final hubCenter = Paint()
+      ..color = const Color(0xFF0F172A)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 2.0, hubCenter);
+
+    // 7. Technical drafting measurement bracket on top
+    final caliperY = center.dy - outerRadius - 8;
+    final draftingPaint = Paint()
+      ..color = const Color(0xFF0F172A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
 
     final leftX = center.dx - rimRadius;
     final rightX = center.dx + rimRadius;
 
-    canvas.drawLine(Offset(leftX, caliperY), Offset(rightX, caliperY), caliperPaint);
-    canvas.drawLine(Offset(leftX, caliperY - 3), Offset(leftX, caliperY + 3), caliperPaint);
-    canvas.drawLine(Offset(rightX, caliperY - 3), Offset(rightX, caliperY + 3), caliperPaint);
+    canvas.drawLine(Offset(leftX, caliperY), Offset(rightX, caliperY), draftingPaint);
+    canvas.drawLine(Offset(leftX, caliperY - 3), Offset(leftX, caliperY + 3), draftingPaint);
+    canvas.drawLine(Offset(rightX, caliperY - 3), Offset(rightX, caliperY + 3), draftingPaint);
 
-    final rimText = rim != null ? '$rim"' : 'Any Rim';
-    final ratioText = ratio != null ? '/$ratio' : '';
+    final rimText = rim != null ? '$rim"' : 'Rim';
+    final ratioText = ratio != null ? ' / R$ratio' : '';
     final textSpan = TextSpan(
-      text: '$rimText $ratioText',
-      style: TextStyle(
+      text: '$rimText$ratioText',
+      style: const TextStyle(
         fontFamily: 'Outfit',
-        color: rim != null ? const Color(0xFF38BDF8) : const Color(0xFF94A3B8),
-        fontSize: 9.5,
-        fontWeight: FontWeight.bold,
+        color: Color(0xFF0F172A),
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
       ),
     );
     final textPainter = TextPainter(
