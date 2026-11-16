@@ -635,11 +635,17 @@ class InquiryController extends GetxController {
 
     final inquiryId = 'ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     final unitPrice = isSetOfFour ? tire.priceInPhp * 0.90 : tire.priceInPhp;
+    const double serviceFee = 150.0;
 
     final totalTires = isSetOfFour ? quantity * 4 : quantity;
-    final totalEstimated = unitPrice * totalTires;
-    final php = totalEstimated.toInt();
+    final tiresSubtotal = unitPrice * totalTires;
+    final totalAmount = tiresSubtotal + serviceFee;
+    final php = totalAmount.toInt();
     final formattedTotal = php.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+    final formattedSubtotal = tiresSubtotal.toInt().toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
         );
@@ -652,6 +658,8 @@ class InquiryController extends GetxController {
         ? 'Set of 4 (${quantity * 4} pcs)'
         : '$quantity Tire${quantity > 1 ? 's' : ''}';
     startingBuffer.writeln('• Quantity: $qtyText');
+    startingBuffer.writeln('• Tires Subtotal: ₱$formattedSubtotal');
+    startingBuffer.writeln('• Platform Service Fee: ₱${serviceFee.toInt()}');
     startingBuffer.writeln('• Total Amount: ₱$formattedTotal');
     startingBuffer.writeln('• Workshop: ${branch.name}');
     startingBuffer.writeln('• Bay Service: Drive-in Installation & Wheel Balancing');
@@ -685,6 +693,7 @@ class InquiryController extends GetxController {
       unitPrice: unitPrice,
       quantity: quantity,
       isSetOfFour: isSetOfFour,
+      serviceFee: serviceFee,
       branchId: branch.id,
       branchName: branch.name,
       branchAddress: branch.address,

@@ -27,10 +27,6 @@ class SettingsView extends StatelessWidget {
                   children: [
                     _buildProfileSection(controller),
                     const SizedBox(height: 28),
-                    _buildNotificationsSection(controller),
-                    const SizedBox(height: 28),
-                    _buildAppStorageSection(controller),
-                    const SizedBox(height: 36),
                     _buildDangerZoneSection(controller),
                     const SizedBox(height: 30),
                   ],
@@ -180,127 +176,6 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationsSection(SettingsController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Notifications',
-          style: TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceDark,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderDark),
-          ),
-          child: Column(
-            children: [
-              Obx(
-                () => _buildSwitchTile(
-                  icon: LucideIcons.bell,
-                  title: 'Push Notifications',
-                  subtitle: 'Receive instant alerts on your phone',
-                  value: controller.pushNotificationsEnabled.value,
-                  onChanged: (val) => controller.pushNotificationsEnabled.value = val,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSwitchTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.accentOrange, size: 20),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            activeThumbColor: AppTheme.accentOrange,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppStorageSection(SettingsController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'App & Storage',
-          style: TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceDark,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderDark),
-          ),
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(LucideIcons.trash2, color: AppTheme.textSecondary, size: 20),
-                title: const Text(
-                  'Clear Cache & Temporary Files',
-                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                trailing: const Icon(LucideIcons.chevronRight, color: AppTheme.textSecondary, size: 18),
-                onTap: () => controller.clearAppCache(),
-              ),
-              const Divider(color: AppTheme.borderDark, height: 1),
-              const ListTile(
-                leading: Icon(LucideIcons.info, color: AppTheme.textSecondary, size: 20),
-                title: Text(
-                  'Version',
-                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                trailing: Text(
-                  'v1.0.0 (Build 1)',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDangerZoneSection(SettingsController controller) {
     return Container(
       width: double.infinity,
@@ -313,15 +188,9 @@ class SettingsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Icon(LucideIcons.alertTriangle, color: Colors.redAccent, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Danger Zone',
-                style: TextStyle(color: Colors.redAccent, fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-            ],
+          const Text(
+            'Danger Zone',
+            style: TextStyle(color: Colors.redAccent, fontSize: 15, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(

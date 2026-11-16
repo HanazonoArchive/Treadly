@@ -793,7 +793,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Order #${inq.orderId} is currently completed. Would you like to reopen this order to Confirmed state?',
+                '#${inq.orderId} is currently completed. Would you like to reopen this order to Confirmed state?',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFF94A3B8),
@@ -840,7 +840,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                         Get.back();
                         Get.snackbar(
                           'Order Reopened',
-                          'Order #${inq.orderId} is now open in Confirmed state.',
+                          '#${inq.orderId} is now open in Confirmed state.',
                           snackPosition: SnackPosition.BOTTOM,
                           backgroundColor: AppTheme.surfaceElevated,
                           colorText: AppTheme.textPrimary,

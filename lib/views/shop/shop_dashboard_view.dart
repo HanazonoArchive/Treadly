@@ -548,7 +548,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                 controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
                 Get.snackbar(
                   'Order Cancelled',
-                  'Order #${inq.orderId} cancelled.',
+                  '#${inq.orderId} cancelled.',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: AppTheme.surfaceElevated,
                   colorText: AppTheme.statusCancelled,
@@ -600,7 +600,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                 controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
                 Get.snackbar(
                   'Order Declined',
-                  'Order #${inq.orderId} marked as unavailable.',
+                  '#${inq.orderId} marked as unavailable.',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: AppTheme.surfaceElevated,
                   colorText: AppTheme.statusCancelled,
@@ -648,7 +648,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                 controller.updateInquiryStatus(inq.id, InquiryStatus.responded);
                 Get.snackbar(
                   'Order Confirmed',
-                  'Order #${inq.orderId} confirmed and queued for bay.',
+                  '#${inq.orderId} confirmed and queued for bay.',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: AppTheme.surfaceElevated,
                   colorText: AppTheme.statusResponded,

@@ -15,11 +15,6 @@ class SettingsController extends GetxController {
   final TextEditingController customAvatarController = TextEditingController();
   final RxBool isSavingName = false.obs;
 
-  // Notification toggles
-  final RxBool pushNotificationsEnabled = true.obs;
-  final RxBool orderUpdatesEnabled = true.obs;
-  final RxBool promoAlertsEnabled = true.obs;
-
   // Curated high-res driver avatar presets
   static const List<String> avatarPresets = [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
@@ -125,20 +120,6 @@ class SettingsController extends GetxController {
     Get.snackbar(
       'Avatar Updated',
       'Your profile picture has been updated.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppTheme.surfaceDark,
-      colorText: AppTheme.textPrimary,
-      borderColor: AppTheme.borderDark,
-      borderWidth: 1,
-      margin: const EdgeInsets.all(16),
-    );
-  }
-
-  /// Clear App Cache
-  void clearAppCache() {
-    Get.snackbar(
-      'Cache Cleared',
-      'Local temporary images and cache cleared successfully.',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppTheme.surfaceDark,
       colorText: AppTheme.textPrimary,

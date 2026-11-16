@@ -167,6 +167,7 @@ class TireInquiry {
   final double unitPrice;
   final int quantity;
   final bool isSetOfFour;
+  final double serviceFee;
   final String branchId;
   final String branchName;
   final String branchAddress;
@@ -195,6 +196,7 @@ class TireInquiry {
     required this.unitPrice,
     required this.quantity,
     this.isSetOfFour = false,
+    this.serviceFee = 150.0,
     required this.branchId,
     required this.branchName,
     required this.branchAddress,
@@ -211,7 +213,8 @@ class TireInquiry {
     required this.updatedAt,
   });
 
-  double get totalPrice => unitPrice * (isSetOfFour ? quantity * 4 : quantity);
+  double get tiresSubtotal => unitPrice * (isSetOfFour ? quantity * 4 : quantity);
+  double get totalPrice => tiresSubtotal + serviceFee;
   int get totalTiresCount => isSetOfFour ? quantity * 4 : quantity;
 
   String get orderNumber {
@@ -336,6 +339,8 @@ class TireInquiry {
         ? 'Set of 4 (${quantity * 4} pcs)'
         : '$quantity Tire${quantity > 1 ? 's' : ''}';
     buffer.writeln('• Quantity: $qtyText');
+    buffer.writeln('• Tires Subtotal: $formattedSubtotal');
+    buffer.writeln('• Platform Service Fee: $formattedServiceFee');
     buffer.writeln('• Total Amount: $formattedTotalPrice');
     buffer.writeln('• Workshop: $branchName');
     buffer.writeln('• Bay Service: Drive-in Installation & Wheel Balancing');
@@ -374,6 +379,24 @@ class TireInquiry {
     return '₱$formatted';
   }
 
+  String get formattedSubtotal {
+    final php = tiresSubtotal.toInt();
+    final formatted = php.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+    return '₱$formatted';
+  }
+
+  String get formattedServiceFee {
+    final php = serviceFee.toInt();
+    final formatted = php.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+    return '₱$formatted';
+  }
+
   TireInquiry copyWith({
     String? id,
     String? userId,
@@ -387,6 +410,7 @@ class TireInquiry {
     double? unitPrice,
     int? quantity,
     bool? isSetOfFour,
+    double? serviceFee,
     String? branchId,
     String? branchName,
     String? branchAddress,
@@ -415,6 +439,7 @@ class TireInquiry {
       unitPrice: unitPrice ?? this.unitPrice,
       quantity: quantity ?? this.quantity,
       isSetOfFour: isSetOfFour ?? this.isSetOfFour,
+      serviceFee: serviceFee ?? this.serviceFee,
       branchId: branchId ?? this.branchId,
       branchName: branchName ?? this.branchName,
       branchAddress: branchAddress ?? this.branchAddress,
@@ -446,6 +471,7 @@ class TireInquiry {
         'unit_price': unitPrice,
         'quantity': quantity,
         'is_set_of_four': isSetOfFour,
+        'service_fee': serviceFee,
         'branch_id': branchId,
         'branch_name': branchName,
         'branch_address': branchAddress,
@@ -488,6 +514,7 @@ class TireInquiry {
       unitPrice: (json['unit_price'] as num?)?.toDouble() ?? 0.0,
       quantity: (json['quantity'] as num?)?.toInt() ?? 1,
       isSetOfFour: json['is_set_of_four'] as bool? ?? false,
+      serviceFee: (json['service_fee'] as num?)?.toDouble() ?? 150.0,
       branchId: json['branch_id'] as String? ?? 'branch-qc-main',
       branchName: json['branch_name'] as String? ?? 'Treadly Auto Hub (Main Flagship)',
       branchAddress: json['branch_address'] as String? ?? '108 Quezon Avenue, QC',

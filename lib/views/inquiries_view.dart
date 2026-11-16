@@ -393,7 +393,7 @@ class _InquiriesViewState extends State<InquiriesView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order #${item.orderId}',
+                  '#${item.orderId}',
                   style: const TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 12,
@@ -563,7 +563,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Are you sure you want to cancel order #${item.orderId}?',
+                                    'Are you sure you want to cancel #${item.orderId}?',
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Color(0xFF94A3B8),
@@ -659,7 +659,7 @@ class _InquiriesViewState extends State<InquiriesView> {
         : item.unitPrice;
     final double origTotal = origUnit * count;
     final double discountAmount = item.isSetOfFour
-        ? (origTotal - item.totalPrice)
+        ? (origTotal - item.tiresSubtotal)
         : 0.0;
 
     return Container(
@@ -676,7 +676,7 @@ class _InquiriesViewState extends State<InquiriesView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Estimated Subtotal ($count × ${_formatCurrency(origUnit)})',
+                'Subtotal ($count × ${_formatCurrency(origUnit)})',
                 style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
               ),
               Text(
@@ -703,7 +703,7 @@ class _InquiriesViewState extends State<InquiriesView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Set of 4 In-Store Promo Est.',
+                  'Set of 4 Promo Discount',
                   style: TextStyle(
                     color: Color(0xFF10B981),
                     fontSize: 11,
@@ -722,6 +722,28 @@ class _InquiriesViewState extends State<InquiriesView> {
               ],
             ),
           ],
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Platform Service Fee',
+                style: TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                _formatCurrency(item.serviceFee),
+                style: const TextStyle(
+                  fontFamily: 'Outfit',
+                  color: AppTheme.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Divider(color: AppTheme.borderDark, height: 1),
@@ -730,7 +752,7 @@ class _InquiriesViewState extends State<InquiriesView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Estimated Total',
+                'Total',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 12,
@@ -768,13 +790,6 @@ class _InquiriesViewState extends State<InquiriesView> {
                 ],
               ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            item.status == InquiryStatus.unpaid
-                ? '* Order is unpaid. Tap "Pay Now" below to complete payment and place your workshop order.'
-                : '* In-store workshop bay fitting and wheel balancing confirmed at the shop.',
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
           ),
         ],
       ),
@@ -992,7 +1007,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Order #${item.orderId}',
+                              '#${item.orderId}',
                               style: const TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 12,
@@ -1035,7 +1050,7 @@ class _InquiriesViewState extends State<InquiriesView> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${item.totalTiresCount} tire${item.totalTiresCount > 1 ? 's' : ''} • Flagship Workshop Bay',
+                                  '${item.totalTiresCount} tire${item.totalTiresCount > 1 ? 's' : ''} (incl. ₱${item.serviceFee.toInt()} platform fee) • Workshop Bay',
                                   style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11.5,

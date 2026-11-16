@@ -59,16 +59,6 @@ class _ProductViewState extends State<ProductView> {
     _isSetOfFour = widget.initialSetOfFour && _tire.stock >= 4;
   }
 
-  double get _effectiveUnitPrice {
-    if (_isSetOfFour) {
-      // 10% discount for set of 4
-      return _tire.priceInPhp * 0.90;
-    }
-    return _tire.priceInPhp;
-  }
-
-  double get _totalPrice => _effectiveUnitPrice * (_isSetOfFour ? _quantity * 4 : _quantity);
-
   String _formatPrice(double amount) {
     final php = amount.toInt();
     final formatted = php.toString().replaceAllMapped(
@@ -178,28 +168,6 @@ class _ProductViewState extends State<ProductView> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 18),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_tire.rating}',
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            ' (${_tire.reviewsCount})',
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -260,14 +228,6 @@ class _ProductViewState extends State<ProductView> {
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '* Estimated price. In-store bundle deals & fitting packages available upon inquiry.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF64748B),
-                    ),
                   ),
                   const SizedBox(height: 18),
 
@@ -556,10 +516,11 @@ class _ProductViewState extends State<ProductView> {
     final notesController = TextEditingController();
 
     // Price calculations for the breakdown
+    const double serviceFee = 150.0;
     final int tireCount = _isSetOfFour ? _quantity * 4 : _quantity;
     final double originalTotal = _tire.priceInPhp * tireCount;
     final double discountAmount = _isSetOfFour ? (originalTotal * 0.10) : 0.0;
-    final double finalPrice = _totalPrice;
+    final double finalPrice = (originalTotal - discountAmount) + serviceFee;
 
     showModalBottomSheet(
       context: context,
@@ -678,7 +639,7 @@ class _ProductViewState extends State<ProductView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Estimated Subtotal ($tireCount × ${_formatPrice(_tire.priceInPhp)})',
+                            'Subtotal ($tireCount × ${_formatPrice(_tire.priceInPhp)})',
                             style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 12,
@@ -702,7 +663,7 @@ class _ProductViewState extends State<ProductView> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Set of 4 In-Store Promo Est.',
+                              'Set of 4 Promo Discount',
                               style: TextStyle(
                                 color: Color(0xFF10B981),
                                 fontSize: 12,
@@ -721,6 +682,28 @@ class _ProductViewState extends State<ProductView> {
                           ],
                         ),
                       ],
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Platform Service Fee',
+                            style: TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            _formatPrice(serviceFee),
+                            style: const TextStyle(
+                              fontFamily: 'Outfit',
+                              color: AppTheme.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10),
                         child: Divider(color: AppTheme.borderDark, height: 1),
@@ -729,7 +712,7 @@ class _ProductViewState extends State<ProductView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Estimated Total',
+                            'Total',
                             style: TextStyle(
                               color: AppTheme.textPrimary,
                               fontSize: 14,
@@ -746,14 +729,6 @@ class _ProductViewState extends State<ProductView> {
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '* Estimated price only. In-store quotation and final payment are confirmed at the shop counter.',
-                        style: TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 10.5,
-                        ),
                       ),
                     ],
                   ),
