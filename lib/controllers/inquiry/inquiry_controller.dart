@@ -993,8 +993,8 @@ class InquiryController extends GetxController {
       Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('inquiries');
 
       if (auth.isStaff) {
-        // Staff: all orders (max 100), sorted on the device so no composite index is needed.
-        query = query.limit(100);
+        // Staff: the 100 newest orders.
+        query = query.orderBy('created_at', descending: true).limit(100);
       } else {
         // Customer: only their own orders.
         final uid = auth.userId.value;
@@ -1034,7 +1034,7 @@ class InquiryController extends GetxController {
 
       Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('inquiries');
       if (auth.isStaff) {
-        query = query.limit(100);
+        query = query.orderBy('created_at', descending: true).limit(100);
       } else {
         final uid = auth.userId.value;
         final email = auth.userEmail.value;

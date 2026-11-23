@@ -23,11 +23,17 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedInquiryFilter = 'All';
+  String _orderQuery = '';
+  String _inventoryQuery = '';
+  String _inventoryFilter = 'All';
+  final TextEditingController _orderSearchCtrl = TextEditingController();
+  final TextEditingController _inventorySearchCtrl = TextEditingController();
   String _analyticsTimeframe = 'All Time';
   String _topTiresSortBy = 'units';
 
   static const List<String> _inquiryFilters = [
     'All',
+    'Unpaid',
     'Placed',
     'Confirmed',
     'Installed',
@@ -54,6 +60,8 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
   @override
   void dispose() {
     _tabController.dispose();
+    _orderSearchCtrl.dispose();
+    _inventorySearchCtrl.dispose();
     super.dispose();
   }
 
@@ -87,268 +95,411 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Header
+  // ---------------------------------------------------------------------------
+
   Widget _buildShopHeader(BuildContext context, InquiryController inquiryCtrl) {
+    final auth = Get.isRegistered<AuthController>() ? Get.find<AuthController>() : null;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
       decoration: const BoxDecoration(
         color: AppTheme.headerDark,
-        border: Border(
-          bottom: BorderSide(color: AppTheme.borderDark, width: 1.5),
-        ),
+        border: Border(bottom: BorderSide(color: AppTheme.borderDark)),
       ),
       child: Row(
         children: [
-          const Expanded(
-            child: Text(
-              'Treadly Desk',
-              style: TextStyle(
-                fontFamily: 'Outfit',
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
-                color: AppTheme.textPrimary,
-              ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Treadly Desk',
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                if (auth != null)
+                  Obx(
+                    () => Text(
+                      'Signed in as ${auth.displayName.value}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    ),
+                  ),
+              ],
             ),
           ),
-
           IconButton(
-            tooltip: 'Sign Out',
-            icon: const Icon(LucideIcons.logOut, color: AppTheme.textPrimary, size: 20),
-            onPressed: () {
-              if (Get.isRegistered<AuthController>()) {
-                Get.find<AuthController>().signOut();
-              }
-            },
-          ),
-
-          IconButton(
-            tooltip: 'Staff Settings',
-            icon: const Icon(
-              LucideIcons.settings,
-              color: AppTheme.textPrimary,
-              size: 20,
-            ),
+            tooltip: 'Staff settings',
+            icon: const Icon(LucideIcons.settings, color: AppTheme.textPrimary, size: 20),
             onPressed: () => _showStaffSettingsDialog(context),
+          ),
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(LucideIcons.logOut, color: AppTheme.textPrimary, size: 20),
+            onPressed: () => _confirmSignOut(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricBox(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceDark,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppTheme.borderDark, width: 1.0),
+  // ---------------------------------------------------------------------------
+  // Shared pieces
+  // ---------------------------------------------------------------------------
+
+  ButtonStyle get _primaryButtonStyle => ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.accentOrange,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      );
+
+  ButtonStyle get _secondaryButtonStyle => OutlinedButton.styleFrom(
+        foregroundColor: AppTheme.textPrimary,
+        side: const BorderSide(color: AppTheme.borderDark),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      );
+
+  ButtonStyle get _dangerTextButtonStyle => TextButton.styleFrom(
+        foregroundColor: AppTheme.statusCancelled,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      );
+
+  Widget _buildSearchField({
+    required TextEditingController controller,
+    required String hint,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: hint,
+          hintStyle: const TextStyle(fontSize: 14, color: AppTheme.textMuted),
+          prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.textSecondary),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Clear',
+                  icon: const Icon(Icons.close, size: 18, color: AppTheme.textSecondary),
+                  onPressed: () {
+                    controller.clear();
+                    onChanged('');
+                  },
+                ),
+          filled: true,
+          fillColor: AppTheme.surfaceDark,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.borderDark),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.borderDark),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.textSecondary),
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Filter chip with a count. The selected chip is the only orange one.
+  Widget _buildCountChip({
+    required String label,
+    required int count,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? AppTheme.accentOrange : AppTheme.surfaceDark,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: selected ? AppTheme.accentOrange : AppTheme.borderDark),
+          ),
+          child: Text(
+            '$label  $count',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : AppTheme.textPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChipRow(List<Widget> chips) {
+    return SizedBox(
+      height: 50,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+        children: chips,
+      ),
+    );
+  }
+
+  Widget _buildStatusPill(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(icon, size: 40, color: AppTheme.textMuted),
+            const SizedBox(height: 12),
             Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'Outfit',
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
+              title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFF8E9BAE),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: AppTheme.accentOrange),
+                onPressed: onAction,
+                child: Text(actionLabel),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
+  Widget _buildThumbnail(String asset) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 44,
+        height: 44,
+        color: AppTheme.inputBg,
+        padding: const EdgeInsets.all(3),
+        child: Image.asset(
+          asset,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.album_rounded, color: AppTheme.textSecondary),
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String action,
+    bool destructive = false,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Back', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              action,
+              style: TextStyle(
+                color: destructive ? AppTheme.statusCancelled : AppTheme.accentOrange,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final ok = await _confirm(
+      context,
+      title: 'Sign out?',
+      message: 'You will need to sign in again to open the Treadly Desk.',
+      action: 'Sign out',
+    );
+    if (ok && Get.isRegistered<AuthController>()) {
+      await Get.find<AuthController>().signOut();
+    }
+  }
+
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${time.month}/${time.day}/${time.year}';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Orders tab
+  // ---------------------------------------------------------------------------
+
+  bool _matchesStatusFilter(TireInquiry inq, String filter) {
+    if (filter == 'Unpaid') return inq.status == InquiryStatus.unpaid;
+    if (filter == 'Placed') return inq.status == InquiryStatus.submitted;
+    if (filter == 'Confirmed') return inq.status == InquiryStatus.responded;
+    if (filter == 'Installed') return inq.status == InquiryStatus.completed;
+    return true;
+  }
+
+  bool _matchesOrderSearch(TireInquiry inq) {
+    final q = _orderQuery.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return inq.orderId.toLowerCase().contains(q) ||
+        inq.customerName.toLowerCase().contains(q) ||
+        '${inq.tireBrand} ${inq.tireModel} ${inq.tireSize}'.toLowerCase().contains(q);
+  }
+
+  Color _statusColor(InquiryStatus status) {
+    if (status == InquiryStatus.unpaid) return const Color(0xFFD97706);
+    if (status == InquiryStatus.submitted) return const Color(0xFF2563EB);
+    if (status == InquiryStatus.responded) return const Color(0xFF7C3AED);
+    if (status == InquiryStatus.completed) return const Color(0xFF059669);
+    return AppTheme.statusCancelled;
+  }
+
   Widget _buildLiveInquiriesTab(
     BuildContext context,
     InquiryController inquiryCtrl,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 12),
+    return Obx(() {
+      final all = inquiryCtrl.staffInquiries.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final visible = all
+          .where((inq) => _matchesStatusFilter(inq, _selectedInquiryFilter) && _matchesOrderSearch(inq))
+          .toList();
 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Obx(
-            () => Row(
-              children: [
-                _buildMetricBox(
-                  'Placed',
-                  '${inquiryCtrl.inquiringCount}',
-                  AppTheme.accentOrange,
-                ),
-                const SizedBox(width: 8),
-                _buildMetricBox(
-                  'Confirmed',
-                  '${inquiryCtrl.respondedCount}',
-                  AppTheme.statusResponded,
-                ),
-                const SizedBox(width: 8),
-                _buildMetricBox(
-                  'Installed',
-                  '${inquiryCtrl.completedCount}',
-                  AppTheme.statusCompleted,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        _buildInquiryFilterChips(inquiryCtrl),
-        const SizedBox(height: 4),
-
-        Expanded(
-          child: Obx(() {
-            final allList = inquiryCtrl.staffInquiries;
-
-            if (allList.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No orders in the workshop inbox yet',
-                  style: TextStyle(color: AppTheme.textSecondary),
-                ),
-              );
-            }
-
-            final filteredList = allList.where((inq) {
-              if (_selectedInquiryFilter == 'Placed' ||
-                  _selectedInquiryFilter == 'Inquiries') {
-                return inq.status == InquiryStatus.submitted;
-              } else if (_selectedInquiryFilter == 'Confirmed' ||
-                  _selectedInquiryFilter == 'Responded') {
-                return inq.status == InquiryStatus.responded;
-              } else if (_selectedInquiryFilter == 'Installed' ||
-                  _selectedInquiryFilter == 'Completed') {
-                return inq.status == InquiryStatus.completed;
-              }
-              return true;
-            }).toList();
-
-            if (filteredList.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        LucideIcons.filterX,
-                        size: 36,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No $_selectedInquiryFilter inquiries found',
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Select "All" to view all active customer conversations.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.accentOrange,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _selectedInquiryFilter = 'All';
-                          });
-                        },
-                        icon: const Icon(LucideIcons.rotateCcw, size: 14),
-                        label: const Text(
-                          'Reset Filter to All',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: filteredList.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                final inq = filteredList[index];
-                return _buildShopInquiryCard(context, inq, inquiryCtrl);
-              },
-            );
+      Widget body;
+      if (all.isEmpty) {
+        body = _buildEmptyState(
+          icon: Icons.inbox_outlined,
+          title: 'No orders yet',
+          message: 'New orders from customers will show up here.',
+        );
+      } else if (visible.isEmpty && _orderQuery.trim().isNotEmpty) {
+        body = _buildEmptyState(
+          icon: Icons.search_off,
+          title: 'No orders match "${_orderQuery.trim()}"',
+          message: 'Try an order number, a customer name or a tire.',
+          actionLabel: 'Clear search',
+          onAction: () => setState(() {
+            _orderSearchCtrl.clear();
+            _orderQuery = '';
           }),
-        ),
-      ],
-    );
-  }
+        );
+      } else if (visible.isEmpty) {
+        body = _buildEmptyState(
+          icon: Icons.inbox_outlined,
+          title: 'No ${_selectedInquiryFilter.toLowerCase()} orders',
+          message: 'Orders move between these lists as their status changes.',
+          actionLabel: 'Show all orders',
+          onAction: () => setState(() => _selectedInquiryFilter = 'All'),
+        );
+      } else {
+        body = ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          itemCount: visible.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) =>
+              _buildShopInquiryCard(context, visible[index], inquiryCtrl),
+        );
+      }
 
-  Widget _buildInquiryFilterChips(InquiryController inquiryCtrl) {
-    return SizedBox(
-      width: double.infinity,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: _inquiryFilters.map((filter) {
-            final isSelected = _selectedInquiryFilter == filter;
-
-            return Padding(
-              padding: const EdgeInsets.only(right: 18),
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedInquiryFilter = filter;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    filter,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppTheme.accentOrange
-                          : const Color(0xFF94A3B8),
-                      fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSearchField(
+            controller: _orderSearchCtrl,
+            hint: 'Search order #, customer or tire',
+            onChanged: (value) => setState(() => _orderQuery = value),
+          ),
+          _buildChipRow([
+            for (final filter in _inquiryFilters)
+              _buildCountChip(
+                label: filter,
+                count: all.where((inq) => _matchesStatusFilter(inq, filter)).length,
+                selected: _selectedInquiryFilter == filter,
+                onTap: () => setState(() => _selectedInquiryFilter = filter),
               ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
+          ]),
+          Expanded(child: body),
+        ],
+      );
+    });
   }
 
   Widget _buildShopInquiryCard(
@@ -356,114 +507,60 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
     TireInquiry inq,
     InquiryController controller,
   ) {
-    Color statusColor;
-    String statusLabel;
-
-    switch (inq.status) {
-      case InquiryStatus.unpaid:
-        statusColor = const Color(0xFFF59E0B);
-        statusLabel = inq.status.label;
-        break;
-      case InquiryStatus.submitted:
-        statusColor = AppTheme.statusSubmitted;
-        statusLabel = inq.status.label;
-        break;
-      case InquiryStatus.responded:
-        statusColor = AppTheme.statusResponded;
-        statusLabel = inq.status.label;
-        break;
-      case InquiryStatus.completed:
-        statusColor = AppTheme.statusCompleted;
-        statusLabel = inq.status.label;
-        break;
-      case InquiryStatus.cancelled:
-        statusColor = AppTheme.statusCancelled;
-        statusLabel = inq.status.label;
-        break;
-    }
+    final tireCount = inq.totalTiresCount;
+    final quantityText = inq.isSetOfFour
+        ? 'Set of 4 ($tireCount tires)'
+        : '$tireCount tire${tireCount == 1 ? '' : 's'}';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: inq.status == InquiryStatus.submitted
-              ? AppTheme.accentOrange.withValues(alpha: 0.6)
-              : AppTheme.borderDark,
-          width: inq.status == InquiryStatus.submitted ? 1.5 : 1.0,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    LucideIcons.user,
-                    size: 14,
-                    color: AppTheme.accentOrange,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    inq.customerName,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-              if (inq.status != InquiryStatus.completed)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: statusColor.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              Text(
+                '#${inq.orderId}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _timeAgo(inq.createdAt),
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                ),
+              ),
+              _buildStatusPill(inq.status.label, _statusColor(inq.status)),
             ],
           ),
-          const SizedBox(height: 10),
-
+          const SizedBox(height: 4),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  color: AppTheme.inputBg,
-                  padding: const EdgeInsets.all(4),
-                  child: Image.asset(
-                    inq.tireImage,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.album_rounded,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
+              const Icon(Icons.person_outline, size: 15, color: AppTheme.textSecondary),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  inq.customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildThumbnail(inq.tireImage),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -471,274 +568,202 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                   children: [
                     Text(
                       '${inq.tireBrand} ${inq.tireModel}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.bold,
                         fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      '${inq.tireSize} • ${inq.isSetOfFour ? 'Set of 4' : '${inq.quantity} Tire(s)'}',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 11,
-                      ),
+                      '${inq.tireSize} · $quantityText',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 inq.formattedTotalPrice,
                 style: const TextStyle(
                   fontFamily: 'Outfit',
-                  color: AppTheme.accentOrange,
                   fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
                 ),
               ),
             ],
           ),
-
           if (inq.notes.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppTheme.inputBg,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Customer Note: ${inq.notes}',
-                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                'Note: ${inq.notes}',
+                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
             ),
           ],
-
-          const SizedBox(height: 14),
-          const Divider(color: AppTheme.borderDark, height: 1),
           const SizedBox(height: 12),
-
-          _buildShopActionRow(inq, controller),
+          _buildShopActionRow(context, inq, controller),
         ],
       ),
     );
   }
 
-  Widget _buildShopActionRow(TireInquiry inq, InquiryController controller) {
+  /// One clear main action per status; destructive actions ask first.
+  Widget _buildShopActionRow(
+    BuildContext context,
+    TireInquiry inq,
+    InquiryController controller,
+  ) {
+    final unread = inq.unreadCountForStaff;
+    final chatButton = OutlinedButton(
+      style: _secondaryButtonStyle,
+      onPressed: () => Get.to(() => InquiryChatView(inquiryId: inq.id)),
+      child: Text(unread > 0 ? 'Chat ($unread new)' : 'Chat'),
+    );
+
     if (inq.status == InquiryStatus.unpaid) {
       return Row(
         children: [
-          Expanded(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFEF4444),
-                side: const BorderSide(color: Color(0xFFEF4444)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              onPressed: () {
-                controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
-                showToast('#${inq.orderId} cancelled.');
-              },
-              child: const Text(
-                'Cancel',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-              ),
+          const Expanded(
+            child: Text(
+              'Waiting for payment',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 2,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.accentOrange,
-                side: const BorderSide(color: AppTheme.accentOrange),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              onPressed: () {
-                Get.to(() => InquiryChatView(inquiryId: inq.id));
-              },
-              child: const Text(
-                'Chat (Awaiting Payment)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-              ),
-            ),
+          TextButton(
+            style: _dangerTextButtonStyle,
+            onPressed: () => _cancelOrder(context, inq, controller, declined: false),
+            child: const Text('Cancel'),
           ),
+          const SizedBox(width: 4),
+          chatButton,
         ],
       );
-    } else if (inq.status == InquiryStatus.submitted) {
+    }
+
+    if (inq.status == InquiryStatus.submitted) {
       return Row(
         children: [
-          Expanded(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFEF4444),
-                side: const BorderSide(color: Color(0xFFEF4444)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              onPressed: () {
-                controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
-                showToast('#${inq.orderId} marked as unavailable.');
-              },
-              child: const Text(
-                'Decline',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-            ),
+          TextButton(
+            style: _dangerTextButtonStyle,
+            onPressed: () => _cancelOrder(context, inq, controller, declined: true),
+            child: const Text('Decline'),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.accentOrange,
-                side: const BorderSide(color: AppTheme.accentOrange),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              onPressed: () {
-                Get.to(() => InquiryChatView(inquiryId: inq.id));
-              },
-              child: const Text(
-                'Chat',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accentOrange,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              onPressed: () {
-                controller.updateInquiryStatus(inq.id, InquiryStatus.responded);
-                showToast('#${inq.orderId} confirmed and queued for bay.');
-              },
-              child: const Text(
-                'Confirm Order',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (inq.status == InquiryStatus.responded) {
-      return Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.statusResponded,
-                side: const BorderSide(color: AppTheme.statusResponded),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              icon: const Icon(LucideIcons.messageSquare, size: 15),
-              label: Text(
-                inq.messages.isEmpty ? 'Chat' : 'Chat (${inq.messages.length})',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-              onPressed: () {
-                Get.to(() => InquiryChatView(inquiryId: inq.id));
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.statusCompleted,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-              onPressed: () {
-                controller.updateInquiryStatus(inq.id, InquiryStatus.completed);
-              },
-              child: const Text(
-                'Complete',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (inq.status == InquiryStatus.completed) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Completed',
-            style: TextStyle(
-              color: Color(0xFF10B981),
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            icon: const Icon(
-              LucideIcons.messageSquare,
-              size: 13,
-              color: AppTheme.accentOrange,
-            ),
-            label: const Text(
-              'View Chat',
-              style: TextStyle(
-                color: AppTheme.accentOrange,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          const Spacer(),
+          chatButton,
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _primaryButtonStyle,
             onPressed: () {
-              Get.to(() => InquiryChatView(inquiryId: inq.id));
+              controller.updateInquiryStatus(inq.id, InquiryStatus.responded);
+              showToast('#${inq.orderId} confirmed');
             },
-          ),
-        ],
-      );
-    } else {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            'Archived (${inq.status.label})',
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontStyle: FontStyle.italic,
-            ),
+            child: const Text('Confirm'),
           ),
         ],
       );
     }
+
+    if (inq.status == InquiryStatus.responded) {
+      return Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'In the bay',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            ),
+          ),
+          chatButton,
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: _primaryButtonStyle,
+            onPressed: () => _markInstalled(context, inq, controller),
+            child: const Text('Mark Installed'),
+          ),
+        ],
+      );
+    }
+
+    if (inq.status == InquiryStatus.completed) {
+      return Row(
+        children: [
+          const Icon(Icons.check_circle, size: 16, color: Color(0xFF059669)),
+          const SizedBox(width: 6),
+          const Expanded(
+            child: Text(
+              'Installed',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF059669)),
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppTheme.textPrimary),
+            onPressed: () => Get.to(() => InquiryChatView(inquiryId: inq.id)),
+            child: const Text('View chat'),
+          ),
+        ],
+      );
+    }
+
+    return const Text(
+      'Cancelled',
+      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+    );
   }
+
+  Future<void> _cancelOrder(
+    BuildContext context,
+    TireInquiry inq,
+    InquiryController controller, {
+    required bool declined,
+  }) async {
+    final ok = await _confirm(
+      context,
+      title: declined ? 'Decline this order?' : 'Cancel this order?',
+      message: declined
+          ? '#${inq.orderId} will be cancelled. The customer will see it as Cancelled.'
+          : '#${inq.orderId} has not been paid yet. Cancelling removes it from the list.',
+      action: declined ? 'Decline' : 'Cancel order',
+      destructive: true,
+    );
+    if (!ok) return;
+    await controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
+    showToast('#${inq.orderId} ${declined ? 'declined' : 'cancelled'}');
+  }
+
+  Future<void> _markInstalled(
+    BuildContext context,
+    TireInquiry inq,
+    InquiryController controller,
+  ) async {
+    final ok = await _confirm(
+      context,
+      title: 'Mark as installed?',
+      message: 'Do this after the tires for #${inq.orderId} are fitted. Installed orders cannot be cancelled.',
+      action: 'Mark installed',
+    );
+    if (!ok) return;
+    await controller.updateInquiryStatus(inq.id, InquiryStatus.completed);
+    showToast('#${inq.orderId} marked as installed');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Inventory tab
+  // ---------------------------------------------------------------------------
+
+  /// Fewer than this many left is "low": not enough for a Set of 4.
+  static const int _lowStockThreshold = 4;
+
+  bool _isLowStock(Tire tire) => tire.stock > 0 && tire.stock < _lowStockThreshold;
 
   Widget _buildQuickInventoryTab(BuildContext context) {
     final homeCtrl = Get.isRegistered<HomeController>()
@@ -746,7 +771,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
         : Get.put(HomeController(), permanent: true);
 
     return Obx(() {
-      final tires = homeCtrl.tires;
+      final tires = homeCtrl.tires.toList();
 
       if (tires.isEmpty) {
         return const Center(
@@ -754,93 +779,136 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
         );
       }
 
-      return ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: tires.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final tire = tires[index];
-          return InkWell(
-            onTap: () => _showEditTireDialog(context, tire, homeCtrl),
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceDark,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.borderDark),
-              ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      color: AppTheme.inputBg,
-                      child: Image.asset(
-                        tire.imageAsset,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                              Icons.album_rounded,
-                              color: AppTheme.textSecondary,
-                            ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tire.fullName,
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          '${tire.size} • ${tire.formattedPrice}',
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+      final lowCount = tires.where(_isLowStock).length;
+      final outCount = tires.where((tire) => tire.isOutOfStock).length;
+      final q = _inventoryQuery.trim().toLowerCase();
+      final visible = tires.where((tire) {
+        if (_inventoryFilter == 'Low stock' && !_isLowStock(tire)) return false;
+        if (_inventoryFilter == 'Out of stock' && !tire.isOutOfStock) return false;
+        if (q.isEmpty) return true;
+        return tire.fullName.toLowerCase().contains(q) || tire.size.toLowerCase().contains(q);
+      }).toList();
 
+      Widget body;
+      if (visible.isEmpty && q.isNotEmpty) {
+        body = _buildEmptyState(
+          icon: Icons.search_off,
+          title: 'No tires match "${_inventoryQuery.trim()}"',
+          message: 'Try a brand, a model or a size like 225/45 R18.',
+          actionLabel: 'Clear search',
+          onAction: () => setState(() {
+            _inventorySearchCtrl.clear();
+            _inventoryQuery = '';
+          }),
+        );
+      } else if (visible.isEmpty) {
+        body = _buildEmptyState(
+          icon: Icons.inventory_2_outlined,
+          title: _inventoryFilter == 'Low stock' ? 'Nothing is running low' : 'Nothing is out of stock',
+          message: 'Tires with fewer than $_lowStockThreshold left are listed under Low stock.',
+          actionLabel: 'Show all tires',
+          onAction: () => setState(() => _inventoryFilter = 'All'),
+        );
+      } else {
+        body = ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          itemCount: visible.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          itemBuilder: (context, index) => _buildInventoryTile(context, visible[index], homeCtrl),
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSearchField(
+            controller: _inventorySearchCtrl,
+            hint: 'Search brand, model or size',
+            onChanged: (value) => setState(() => _inventoryQuery = value),
+          ),
+          _buildChipRow([
+            _buildCountChip(
+              label: 'All',
+              count: tires.length,
+              selected: _inventoryFilter == 'All',
+              onTap: () => setState(() => _inventoryFilter = 'All'),
+            ),
+            _buildCountChip(
+              label: 'Low stock',
+              count: lowCount,
+              selected: _inventoryFilter == 'Low stock',
+              onTap: () => setState(() => _inventoryFilter = 'Low stock'),
+            ),
+            _buildCountChip(
+              label: 'Out of stock',
+              count: outCount,
+              selected: _inventoryFilter == 'Out of stock',
+              onTap: () => setState(() => _inventoryFilter = 'Out of stock'),
+            ),
+          ]),
+          Expanded(child: body),
+        ],
+      );
+    });
+  }
+
+  Widget _buildInventoryTile(BuildContext context, Tire tire, HomeController homeCtrl) {
+    Widget stockLabel;
+    if (tire.isOutOfStock) {
+      stockLabel = _buildStatusPill('Out of stock', AppTheme.statusCancelled);
+    } else if (_isLowStock(tire)) {
+      stockLabel = _buildStatusPill('${tire.stock} left', const Color(0xFFD97706));
+    } else {
+      stockLabel = Text(
+        '${tire.stock} in stock',
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+      );
+    }
+
+    return InkWell(
+      onTap: () => _showEditTireDialog(context, tire, homeCtrl),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceDark,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.borderDark),
+        ),
+        child: Row(
+          children: [
+            _buildThumbnail(tire.imageAsset),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    tire.isOutOfStock
-                        ? 'OUT OF STOCK'
-                        : '${tire.stock} IN STOCK',
-                    style: TextStyle(
-                      color: tire.isOutOfStock
-                          ? const Color(0xFFEF4444)
-                          : const Color(0xFF10B981),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
+                    tire.fullName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFF64748B),
-                    size: 16,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${tire.size} · ${tire.formattedPrice}',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                   ),
                 ],
               ),
             ),
-          );
-        },
-      );
-    });
+            const SizedBox(width: 8),
+            stockLabel,
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, size: 18, color: AppTheme.textMuted),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildAnalyticsTab(
@@ -1560,7 +1628,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                 () => _buildBottomNavItem(
                   index: 0,
                   icon: LucideIcons.inbox,
-                  label: 'Live Orders',
+                  label: 'Orders',
                   badgeCount: inquiryCtrl.unreadCustomerMessagesCount,
                 ),
               ),
