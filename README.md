@@ -58,9 +58,9 @@ flutter test
 ```
 lib/
   controllers/   GetX controllers (auth, orders/chat, search, settings, home)
-  core/          theme, Firebase options, pricing
-  models/        tire, order (inquiry), shop branch
-  services/      Firestore access, tire catalog, navigation, location
+  core/          theme, Firebase options, pricing, shop name
+  models/        tire, order (inquiry)
+  services/      Firestore access, tire catalog, navigation
   views/         screens (home, search, product, orders, chat, profile, settings, staff desk)
   widgets/       shared UI pieces
 assets/data/     bundled tire catalog

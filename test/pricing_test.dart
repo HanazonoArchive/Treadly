@@ -41,11 +41,7 @@ void main() {
       quantity: 1,
       isSetOfFour: true,
       serviceFee: 150,
-      branchId: 'b1',
       branchName: 'Shop',
-      branchAddress: '',
-      vehicleModel: '',
-      preferredDate: '',
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
     );

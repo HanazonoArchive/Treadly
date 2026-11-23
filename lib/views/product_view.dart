@@ -804,9 +804,6 @@ class _ProductViewState extends State<ProductView> {
                         tire: _tire,
                         quantity: _quantity,
                         isSetOfFour: _isSetOfFour,
-                        branch: inquiryCtrl.activeBranch.value,
-                        vehicleModel: '',
-                        preferredDate: '',
                         notes: notesController.text,
                       );
 

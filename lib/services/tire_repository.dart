@@ -26,7 +26,6 @@ class TireRepository {
     // in the background and use the bundled list for now.
     if (fallbackList.isNotEmpty && tires.length < fallbackList.length) {
       debugPrint('[TireRepository] Expanded catalog detected (${fallbackList.length} tires vs ${tires.length} in Firestore). Syncing to Firestore...');
-      FirebaseSyncService.instance.cleanLegacyFirestoreTires();
       FirebaseSyncService.instance.syncTires(fallbackList);
       return fallbackList;
     }
@@ -101,40 +100,7 @@ class TireRepository {
     return uniqueTires.values.toList();
   }
 
-  Future<void> seedLiveDatabase(List<Tire> tires) async {
-    try {
-      final firestore = FirebaseFirestore.instance;
-      for (final tire in tires) {
-        await firestore
-            .collection('tires')
-            .doc(tire.id)
-            .set(tire.toJson(), SetOptions(merge: true));
-      }
-      debugPrint('[TireRepository] Seeded ${tires.length} tires into Firestore.');
-    } catch (e) {
-      debugPrint('[TireRepository] Error seeding Firestore: $e');
-    }
-  }
-
-  /// Not called yet; stock is adjusted by staff.
-  Future<void> decrementStock({
-    required String tireId,
-    required int quantityDeducted,
-  }) async {
-    try {
-      final docRef = FirebaseFirestore.instance.collection('tires').doc(tireId);
-      final docSnap = await docRef.get();
-      if (docSnap.exists) {
-        final currentStock = (docSnap.data()?['stock'] as num?)?.toInt() ?? 0;
-        final newStock = (currentStock - quantityDeducted).clamp(0, 999999);
-        await docRef.update({'stock': newStock});
-        debugPrint('[TireRepository] Decremented Firestore stock for $tireId to $newStock');
-      }
-    } catch (e) {
-      debugPrint('[TireRepository] Firestore stock decrement error: $e');
-    }
-  }
-
+  /// Saves a tire's stock, price and specs.
   Future<void> updateTire(Tire tire) async {
     try {
       await FirebaseFirestore.instance

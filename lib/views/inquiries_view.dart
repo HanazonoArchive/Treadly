@@ -947,7 +947,7 @@ class _InquiriesViewState extends State<InquiriesView> {
       {
         'id': 'Workshop Bay Counter',
         'title': 'Pay at Workshop Counter',
-        'subtitle': 'Cash or card at 108 Quezon Avenue bay',
+        'subtitle': 'Pay in cash or by card at the shop',
         'icon': Icons.store_mall_directory_rounded,
       },
     ];

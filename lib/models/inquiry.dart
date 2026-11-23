@@ -1,4 +1,5 @@
 import '../core/pricing.dart';
+import '../core/shop.dart';
 
 /// Order status. Labels shown to users: Unpaid, Placed, Confirmed, Installed, Cancelled.
 enum InquiryStatus {
@@ -170,11 +171,7 @@ class TireInquiry {
   final int quantity;
   final bool isSetOfFour;
   final double serviceFee;
-  final String branchId;
   final String branchName;
-  final String branchAddress;
-  final String vehicleModel;
-  final String preferredDate;
   final String notes;
   final InquiryStatus status;
   final List<InquiryMessage> messages;
@@ -199,11 +196,7 @@ class TireInquiry {
     required this.quantity,
     this.isSetOfFour = false,
     this.serviceFee = 150.0,
-    required this.branchId,
     required this.branchName,
-    required this.branchAddress,
-    required this.vehicleModel,
-    required this.preferredDate,
     this.notes = '',
     this.status = InquiryStatus.submitted,
     this.messages = const [],
@@ -419,11 +412,7 @@ class TireInquiry {
     int? quantity,
     bool? isSetOfFour,
     double? serviceFee,
-    String? branchId,
     String? branchName,
-    String? branchAddress,
-    String? vehicleModel,
-    String? preferredDate,
     String? notes,
     InquiryStatus? status,
     List<InquiryMessage>? messages,
@@ -448,11 +437,7 @@ class TireInquiry {
       quantity: quantity ?? this.quantity,
       isSetOfFour: isSetOfFour ?? this.isSetOfFour,
       serviceFee: serviceFee ?? this.serviceFee,
-      branchId: branchId ?? this.branchId,
       branchName: branchName ?? this.branchName,
-      branchAddress: branchAddress ?? this.branchAddress,
-      vehicleModel: vehicleModel ?? this.vehicleModel,
-      preferredDate: preferredDate ?? this.preferredDate,
       notes: notes ?? this.notes,
       status: status ?? this.status,
       messages: messages ?? this.messages,
@@ -480,11 +465,7 @@ class TireInquiry {
         'quantity': quantity,
         'is_set_of_four': isSetOfFour,
         'service_fee': serviceFee,
-        'branch_id': branchId,
         'branch_name': branchName,
-        'branch_address': branchAddress,
-        'vehicle_model': vehicleModel,
-        'preferred_date': preferredDate,
         'notes': notes,
         'status': status.value,
         'messages': messages.map((m) => m.toJson()).toList(),
@@ -523,11 +504,7 @@ class TireInquiry {
       quantity: (json['quantity'] as num?)?.toInt() ?? 1,
       isSetOfFour: json['is_set_of_four'] as bool? ?? false,
       serviceFee: (json['service_fee'] as num?)?.toDouble() ?? 150.0,
-      branchId: json['branch_id'] as String? ?? 'branch-qc-main',
-      branchName: json['branch_name'] as String? ?? 'Treadly Auto Hub (Main Flagship)',
-      branchAddress: json['branch_address'] as String? ?? '108 Quezon Avenue, QC',
-      vehicleModel: json['vehicle_model'] as String? ?? 'Not specified',
-      preferredDate: json['preferred_date'] as String? ?? 'As soon as available',
+      branchName: json['branch_name'] as String? ?? Shop.name,
       notes: json['notes'] as String? ?? '',
       status: InquiryStatusX.fromString(json['status'] as String?),
       messages: parsedMessages,

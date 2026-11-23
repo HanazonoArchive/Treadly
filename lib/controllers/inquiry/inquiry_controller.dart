@@ -7,18 +7,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/pricing.dart';
+import '../../core/shop.dart';
 import '../../models/inquiry.dart';
-import '../../models/shop_branch.dart';
 import '../../models/tire.dart';
-import '../../services/firebase_sync_service.dart';
 import '../auth_controller.dart';
 
 /// Orders (inquiries), chat and analytics for both customers and staff.
 class InquiryController extends GetxController {
   static const String _prefInquiriesKey = 'treadly_local_inquiries_cache';
   static const String _prefRoleKey = 'treadly_active_role_portal';
-  static const String _prefBranchesKey = 'treadly_shop_branches_cache';
-  static const String _prefActiveBranchKey = 'treadly_active_branch_id';
 
   // Portal toggle: false = customer, true = staff.
   final RxBool isShopPortal = false.obs;
@@ -198,7 +195,7 @@ class InquiryController extends GetxController {
   String generateExecutiveTextSummary({String timeframe = 'All Time'}) {
     final buffer = StringBuffer();
     buffer.writeln('TREADLY WORKSHOP EXECUTIVE SUMMARY');
-    buffer.writeln('Flagship: Treadly Auto & Tire Center (108 Quezon Ave)');
+    buffer.writeln('Shop: ${Shop.name}');
     buffer.writeln('Generated: ${DateTime.now().toLocal().toString().split('.').first}');
     buffer.writeln('Timeframe: $timeframe');
     buffer.writeln('----------------------------------------');
@@ -218,10 +215,6 @@ class InquiryController extends GetxController {
     return buffer.toString();
   }
 
-  // Shop Branches
-  final RxList<ShopBranch> branches = <ShopBranch>[].obs;
-  final Rx<ShopBranch> activeBranch = ShopBranch.defaultBranches.first.obs;
-
   // Staff names, keyed by staff id.
   final RxMap<String, String> staffNames = <String, String>{}.obs;
   final RxString activeStaffDisplayName = 'jhon'.obs;
@@ -231,8 +224,6 @@ class InquiryController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    branches.assignAll(ShopBranch.defaultBranches);
-    activeBranch.value = ShopBranch.defaultBranches.first;
     _initInquiryController();
   }
 
@@ -244,16 +235,10 @@ class InquiryController extends GetxController {
 
   Future<void> _initInquiryController() async {
     await _loadPersistedRole();
-    await _loadPersistedBranches();
     await _loadPersistedStaffName();
     fetchStaffDirectory();
     await _loadLocalInquiries();
     _startFirestoreInquiriesStream();
-
-    // Make sure the shop record exists and remove old test data from Firestore.
-    FirebaseSyncService.instance.cleanLegacyFirestoreTires();
-    FirebaseSyncService.instance.cleanDeprecatedCollections();
-    FirebaseSyncService.instance.syncFlagshipWorkshop();
 
     try {
       if (Get.isRegistered<AuthController>()) {
@@ -312,133 +297,6 @@ class InquiryController extends GetxController {
     } catch (e) {
       debugPrint('[InquiryController] Fetch staff directory note: $e');
     }
-  }
-
-  // Shop branches
-
-  Future<void> _loadPersistedBranches() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedJson = prefs.getString(_prefBranchesKey);
-      if (cachedJson != null && cachedJson.isNotEmpty) {
-        final List<dynamic> decoded = jsonDecode(cachedJson) as List<dynamic>;
-        final loaded = decoded.map((e) => ShopBranch.fromJson(e as Map<String, dynamic>)).toList();
-        if (loaded.isNotEmpty) {
-          branches.assignAll(loaded);
-        }
-      }
-
-      final activeId = prefs.getString(_prefActiveBranchKey);
-      if (activeId != null && activeId.isNotEmpty) {
-        final match = branches.firstWhereOrNull((b) => b.id == activeId);
-        if (match != null) {
-          activeBranch.value = match;
-        }
-      } else if (branches.isNotEmpty) {
-        activeBranch.value = branches.first;
-      }
-    } catch (e) {
-      debugPrint('[InquiryController] Error loading persisted branches: $e');
-    }
-
-    _fetchBranchesFromFirestore();
-  }
-
-  Future<void> _fetchBranchesFromFirestore() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('shop_branches').get();
-      await FirebaseFirestore.instance
-          .collection('shop_branches')
-          .doc(ShopBranch.flagship.id)
-          .set(ShopBranch.flagship.toJson(), SetOptions(merge: true));
-
-      // Skip old multi-branch documents.
-      for (final doc in snapshot.docs) {
-        if (doc.id != ShopBranch.flagship.id) {
-          try {
-            await FirebaseFirestore.instance.collection('shop_branches').doc(doc.id).delete();
-          } catch (_) {}
-        }
-      }
-
-      branches.assignAll([ShopBranch.flagship]);
-      activeBranch.value = ShopBranch.flagship;
-      _saveBranchesToLocal();
-    } catch (e) {
-      debugPrint('[InquiryController] Firestore fetch branches note: $e');
-    }
-  }
-
-  Future<void> _saveBranchesToLocal() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final list = branches.map((b) => b.toJson()).toList();
-      await prefs.setString(_prefBranchesKey, jsonEncode(list));
-      await prefs.setString(_prefActiveBranchKey, activeBranch.value.id);
-    } catch (e) {
-      debugPrint('[InquiryController] Error saving branches locally: $e');
-    }
-  }
-
-  Future<void> setActiveBranch(ShopBranch branch) async {
-    activeBranch.value = branch;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefActiveBranchKey, branch.id);
-    } catch (_) {}
-  }
-
-  Future<void> addBranch(ShopBranch newBranch) async {
-    branches.add(newBranch);
-    await _saveBranchesToLocal();
-    try {
-      await FirebaseFirestore.instance
-          .collection('shop_branches')
-          .doc(newBranch.id)
-          .set(newBranch.toJson(), SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('[InquiryController] Firestore add branch error: $e');
-    }
-  }
-
-  Future<void> updateBranch(ShopBranch updatedBranch) async {
-    final idx = branches.indexWhere((b) => b.id == updatedBranch.id);
-    if (idx != -1) {
-      branches[idx] = updatedBranch;
-      branches.refresh();
-    }
-    if (activeBranch.value.id == updatedBranch.id) {
-      activeBranch.value = updatedBranch;
-    }
-    await _saveBranchesToLocal();
-    try {
-      await FirebaseFirestore.instance
-          .collection('shop_branches')
-          .doc(updatedBranch.id)
-          .set(updatedBranch.toJson(), SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('[InquiryController] Firestore update branch error: $e');
-    }
-  }
-
-  Future<bool> deleteBranch(String branchId) async {
-    if (branches.length <= 1) {
-      return false; // Cannot delete the only remaining branch
-    }
-    branches.removeWhere((b) => b.id == branchId);
-    if (activeBranch.value.id == branchId) {
-      activeBranch.value = branches.first;
-    }
-    await _saveBranchesToLocal();
-    try {
-      await FirebaseFirestore.instance
-          .collection('shop_branches')
-          .doc(branchId)
-          .delete();
-    } catch (e) {
-      debugPrint('[InquiryController] Firestore delete branch error: $e');
-    }
-    return true;
   }
 
   // Order lists and counts
@@ -593,9 +451,6 @@ class InquiryController extends GetxController {
     required Tire tire,
     required int quantity,
     required bool isSetOfFour,
-    required ShopBranch branch,
-    required String vehicleModel,
-    required String preferredDate,
     String notes = '',
   }) async {
     String userId = 'guest';
@@ -639,7 +494,7 @@ class InquiryController extends GetxController {
     startingBuffer.writeln('• Tires Subtotal: $formattedSubtotal');
     startingBuffer.writeln('• Platform Service Fee: ${TirePriceQuote.format(serviceFee)}');
     startingBuffer.writeln('• Total Amount: $formattedTotal');
-    startingBuffer.writeln('• Workshop: ${branch.name}');
+    startingBuffer.writeln('• Workshop: ${Shop.name}');
     startingBuffer.writeln('• Bay Service: Drive-in Installation & Wheel Balancing');
     startingBuffer.writeln('• Status: Unpaid (Pending Payment)');
     if (notes.trim().isNotEmpty) {
@@ -672,11 +527,7 @@ class InquiryController extends GetxController {
       quantity: quantity,
       isSetOfFour: isSetOfFour,
       serviceFee: serviceFee,
-      branchId: branch.id,
-      branchName: branch.name,
-      branchAddress: branch.address,
-      vehicleModel: vehicleModel.trim().isEmpty ? 'General Vehicle' : vehicleModel.trim(),
-      preferredDate: preferredDate.trim().isEmpty ? 'As soon as available' : preferredDate.trim(),
+      branchName: Shop.name,
       notes: notes.trim(),
       status: InquiryStatus.unpaid, // Initial status is UNPAID until Pay Now is completed
       messages: initialMessages,

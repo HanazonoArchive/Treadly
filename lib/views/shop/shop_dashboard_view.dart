@@ -483,13 +483,6 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                         fontSize: 11,
                       ),
                     ),
-                    Text(
-                      'Vehicle: ${inq.vehicleModel} • Visit: ${inq.preferredDate}',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 11,
-                      ),
-                    ),
                   ],
                 ),
               ),
