@@ -40,27 +40,19 @@ class InquiryController extends GetxController {
   int get completedOrdersCount =>
       inquiries.where((inq) => inq.status == InquiryStatus.completed).length;
 
-  /// Orders pending bay prep
-  int get pendingPrepsCount =>
-      inquiries.where((inq) => inq.status == InquiryStatus.submitted).length;
-
-  /// Orders ready in bay
-  int get bayReadyCount =>
-      inquiries.where((inq) => inq.status == InquiryStatus.responded).length;
+  /// Orders that are not installed or cancelled yet.
+  int get openOrdersCount => inquiries
+      .where((inq) =>
+          inq.status == InquiryStatus.unpaid ||
+          inq.status == InquiryStatus.submitted ||
+          inq.status == InquiryStatus.responded)
+      .length;
 
   /// Average value of an installed order.
   double get averageOrderValue {
     final installed = completedOrdersCount;
     if (installed == 0) return 0.0;
     return totalRevenue / installed;
-  }
-
-  /// Share of orders that are Set of 4.
-  double get setOfFourRatio {
-    final valid = inquiries.where((inq) => inq.status != InquiryStatus.cancelled).toList();
-    if (valid.isEmpty) return 0.70;
-    final setOfFourCount = valid.where((inq) => inq.isSetOfFour).length;
-    return setOfFourCount / valid.length;
   }
 
   /// Top 5 tires by units ordered.
@@ -193,7 +185,7 @@ class InquiryController extends GetxController {
     buffer.writeln('• Gross Revenue: ₱${getTimeframeRevenue(timeframe).toStringAsFixed(0)}');
     buffer.writeln('• Completed Bay Fittings: ${getTimeframeCompletedCount(timeframe)} orders');
     buffer.writeln('• Total Tires Fitted: ${getTimeframeUnitsFitted(timeframe)} units');
-    buffer.writeln('• Open Orders: ${pendingPrepsCount + bayReadyCount}');
+    buffer.writeln('• Open Orders: $openOrdersCount');
     buffer.writeln('• Average Order Ticket: ₱${getTimeframeAov(timeframe).toStringAsFixed(0)}');
     buffer.writeln('• Conversion Rate: ${conversionRate.toStringAsFixed(1)}%');
     buffer.writeln('----------------------------------------');

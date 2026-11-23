@@ -931,10 +931,14 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
         final timeframeInqs = inquiryCtrl.getInquiriesForTimeframe(
           _analyticsTimeframe,
         );
-        final setOfFourPct = (inquiryCtrl.setOfFourRatio * 100)
-            .clamp(0, 100)
-            .toInt();
-        final singlePct = 100 - setOfFourPct;
+        final hasMixData = timeframeInqs.isNotEmpty;
+        final setOfFourPct = hasMixData
+            ? (timeframeInqs.where((i) => i.isSetOfFour).length *
+                      100 /
+                      timeframeInqs.length)
+                  .round()
+            : 0;
+        final singlePct = hasMixData ? 100 - setOfFourPct : 0;
 
         final topTires = inquiryCtrl.getTopSellingTiresWithSort(
           sortBy: _topTiresSortBy,
@@ -1094,8 +1098,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                 Expanded(
                   child: _buildSimpleMetricCard(
                     label: 'Open Orders',
-                    value:
-                        '${inquiryCtrl.pendingPrepsCount + inquiryCtrl.bayReadyCount}',
+                    value: '${inquiryCtrl.openOrdersCount}',
                     color: AppTheme.textPrimary,
                   ),
                 ),
@@ -1214,68 +1217,79 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                     borderRadius: BorderRadius.circular(6),
                     child: SizedBox(
                       height: 12,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: setOfFourPct,
-                            child: Container(color: AppTheme.accentOrange),
+                      child: !hasMixData
+                          ? Container(color: const Color(0xFFE2E8F0))
+                          : Row(
+                            children: [
+                              Expanded(
+                                flex: setOfFourPct,
+                                child: Container(color: AppTheme.accentOrange),
+                              ),
+                              Expanded(
+                                flex: singlePct,
+                                child: Container(color: const Color(0xFFCBD5E1)),
+                              ),
+                            ],
                           ),
-                          Expanded(
-                            flex: singlePct,
-                            child: Container(color: const Color(0xFFCBD5E1)),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppTheme.accentOrange,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Set of 4 ($setOfFourPct%)',
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                  if (!hasMixData)
+                    const Text(
+                      'No orders in this period',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
                       ),
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFCBD5E1),
-                              shape: BoxShape.circle,
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.accentOrange,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Single Replacements ($singlePct%)',
-                            style: const TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 6),
+                            Text(
+                              'Set of 4 ($setOfFourPct%)',
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFCBD5E1),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Single Replacements ($singlePct%)',
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

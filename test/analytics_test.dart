@@ -51,6 +51,10 @@ void main() {
     expect(ctrl.getTimeframeCancelledCount('Today'), 1);
   });
 
+  test('open orders include unpaid, placed and confirmed', () {
+    expect(ctrl.openOrdersCount, 3);
+  });
+
   test('no installed orders means zero revenue and zero average', () {
     ctrl.inquiries.clear();
     ctrl.inquiries.add(_order('ORD-9', InquiryStatus.unpaid));
