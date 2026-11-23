@@ -5,11 +5,8 @@ import '../controllers/navigation_controller.dart';
 import '../controllers/search/search_controller.dart';
 import '../core/app_theme.dart';
 
-/// Dedicated Shopee-style Search Input View.
-/// Contains:
-/// - Top bar: Return button + Autofocused Search Field + Search action button
-/// - Body: Recent keywords chips (with clear option) + Popular searches
-/// On submit: Saves keyword, navigates to SearchView (Tab 1), and reflects query at the top.
+/// Search screen shown before a search: recent and popular searches.
+/// Submitting saves the query and opens the results on the Search tab.
 class SearchInputView extends StatefulWidget {
   final String initialQuery;
 
@@ -43,7 +40,7 @@ class _SearchInputViewState extends State<SearchInputView> {
     _textController = TextEditingController(text: widget.initialQuery);
     _focusNode = FocusNode();
 
-    // Select all text if initialQuery was provided so user can easily replace it
+    // Select the existing query so typing replaces it
     if (widget.initialQuery.isNotEmpty) {
       _textController.selection = TextSelection(
         baseOffset: 0,
@@ -68,12 +65,10 @@ class _SearchInputViewState extends State<SearchInputView> {
 
     searchController.applyExternalSearch(query: trimmed);
 
-    // Switch to Search View (Tab 1)
     if (Get.isRegistered<NavigationController>()) {
       Get.find<NavigationController>().changeTab(1);
     }
 
-    // Dismiss this screen to return to the catalog
     Get.back();
   }
 
@@ -89,7 +84,7 @@ class _SearchInputViewState extends State<SearchInputView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Bar: Return Button + Search Box + Search Text Button
+            // Top bar
             Container(
               decoration: const BoxDecoration(
                 color: AppTheme.headerDark,
@@ -100,7 +95,6 @@ class _SearchInputViewState extends State<SearchInputView> {
               padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
               child: Row(
                 children: [
-                  // Return Button
                   IconButton(
                     icon: const Icon(
                       Icons.arrow_back_rounded,
@@ -113,7 +107,6 @@ class _SearchInputViewState extends State<SearchInputView> {
                   ),
                   const SizedBox(width: 10),
 
-                  // Search Box with Autofocus
                   Expanded(
                     child: Container(
                       height: 42,
@@ -180,7 +173,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                   ),
                   const SizedBox(width: 10),
 
-                  // Search Submit Button (Shopee style)
+                  // Search button
                   GestureDetector(
                     onTap: () => _submitSearch(_textController.text),
                     child: Container(
@@ -199,14 +192,13 @@ class _SearchInputViewState extends State<SearchInputView> {
               ),
             ),
 
-            // Content below: Recent searches & Popular searches (fits above keyboard)
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Recent Searches Section
+                    // Recent searches
                     Obx(() {
                       final recents = searchController.recentSearches;
                       if (recents.isEmpty) return const SizedBox.shrink();
@@ -300,7 +292,7 @@ class _SearchInputViewState extends State<SearchInputView> {
                       );
                     }),
 
-                    // Popular Searches Section
+                    // Popular searches
                     const Text(
                       'Popular Searches',
                       style: TextStyle(

@@ -28,7 +28,7 @@ class ProfileTopNavBar extends StatelessWidget {
     );
   }
 
-  /// "<" Back icon button
+  /// Back
   Widget _buildBackButton() {
     return IconButton(
       onPressed: () {
@@ -49,7 +49,7 @@ class ProfileTopNavBar extends StatelessWidget {
     );
   }
 
-  /// "Profile" text
+  /// Title
   Widget _buildTitle() {
     return const Text(
       'Profile',
@@ -61,7 +61,7 @@ class ProfileTopNavBar extends StatelessWidget {
     );
   }
 
-  /// Settings icon button
+  /// Settings
   Widget _buildSettingsButton() {
     return IconButton(
       onPressed: () => controller.navigateToSettings(),

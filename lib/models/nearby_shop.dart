@@ -91,7 +91,6 @@ class NearbyShop {
     required this.longitude,
   });
 
-  /// Factory to create a NearbyShop from an existing ShopBranch
   factory NearbyShop.fromBranch(ShopBranch branch) {
     return NearbyShop(
       id: branch.id,
@@ -111,7 +110,7 @@ class NearbyShop {
     );
   }
 
-  /// Generates curated realistic nearby shops & vulcanizing centers for a branch
+  /// Sample nearby shops for a branch.
   static List<NearbyShop> getNearbyShopsForBranch(ShopBranch branch) {
     final hub = NearbyShop.fromBranch(branch);
 
@@ -227,9 +226,8 @@ class NearbyShop {
     return localPois;
   }
 
-  /// Real asynchronous search using OpenStreetMap's free Nominatim API.
-  /// Real asynchronous search using OpenStreetMap's free Nominatim API.
-  /// Queries real vulcanizing stations and tire repair shops near coordinates.
+  /// Searches OpenStreetMap (Nominatim) for tire and vulcanizing shops near
+  /// the given coordinates.
   static Future<List<NearbyShop>> fetchOsmLiveSearch({
     required double lat,
     required double lon,

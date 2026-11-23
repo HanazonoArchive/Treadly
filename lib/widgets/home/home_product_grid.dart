@@ -7,8 +7,7 @@ import '../../views/product_view.dart';
 import '../common/product_tile.dart';
 import '../common/product_tile_skeleton.dart';
 
-/// 2-Column Product Grid for Home Showcase.
-/// Reuses universal ProductTile and ProductTileSkeleton.
+/// Two-column product grid on Home.
 class HomeProductGrid extends StatelessWidget {
   const HomeProductGrid({super.key});
 
@@ -21,7 +20,6 @@ class HomeProductGrid extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Title
           const Text(
             'Products',
             style: TextStyle(
@@ -33,7 +31,6 @@ class HomeProductGrid extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Products Grid (Pure Showcase)
           Obx(() {
             if (controller.isLoading.value) {
               return ProductTileSkeleton.grid(count: 6);

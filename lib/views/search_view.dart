@@ -8,9 +8,8 @@ import '../views/product_view.dart';
 import '../widgets/common/product_tile.dart';
 import '../widgets/common/product_tile_skeleton.dart';
 
-/// Tab 1: Search & Filter Catalog View.
-/// - Before typing/searching: Opens search with pre-keywords (Recent & Popular searches).
-/// - When typing or selecting a keyword: Shows search results, sort, category filters & products.
+/// Search tab: recent/popular searches before searching, then results with
+/// category chips, sorting and the Sizing Studio filter.
 class SearchView extends StatelessWidget {
   const SearchView({super.key});
 
@@ -46,7 +45,7 @@ class SearchView extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Header Bar with interactive search input
+            // Header
             Container(
               decoration: const BoxDecoration(
                 color: AppTheme.headerDark,
@@ -57,7 +56,6 @@ class SearchView extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               child: Row(
                 children: [
-                  // Return / Back Button
                   IconButton(
                     icon: const Icon(
                       Icons.arrow_back_rounded,
@@ -81,7 +79,6 @@ class SearchView extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
 
-                  // Active Search Box
                   Expanded(
                     child: Container(
                       height: 42,
@@ -155,7 +152,7 @@ class SearchView extends StatelessWidget {
                     ),
                   ),
 
-                  // Trailing Action: Sort button when searching; "Search" submit button when pre-search
+                  // Sort button, or Search before the first search
                   Obx(() {
                     if (controller.isSearchActive) {
                       return Row(
@@ -194,7 +191,6 @@ class SearchView extends StatelessWidget {
               ),
             ),
 
-            // Body: Pre-Keywords OR Search Results
             Expanded(
               child: Obx(() {
                 if (!controller.isSearchActive) {
@@ -210,14 +206,14 @@ class SearchView extends StatelessWidget {
     );
   }
 
-  /// 1. Pre-Keywords View: Shows recent searches & popular searches before typing/searching
+  /// Recent and popular searches.
   Widget _buildPreKeywordsView(SearchCatalogController controller) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Recent Searches Section
+          // Recent searches
           Obx(() {
             final recents = controller.recentSearches;
             if (recents.isEmpty) return const SizedBox.shrink();
@@ -311,7 +307,7 @@ class SearchView extends StatelessWidget {
             );
           }),
 
-          // Popular Searches Section
+          // Popular searches
           const Text(
             'Popular Searches',
             style: TextStyle(
@@ -369,11 +365,11 @@ class SearchView extends StatelessWidget {
     );
   }
 
-  /// 2. Search Results View: Shows category chips, filters banner, and products grid
+  /// Results: category chips, active-filter banner and product grid.
   Widget _buildSearchResultsView(BuildContext context, SearchCatalogController controller) {
     return Column(
       children: [
-        // Category Chips (All, Set of 4, Performance, All-Season, SUV & 4x4) + Right Filter Button
+        // Category chips and Filter button
         Container(
           color: AppTheme.headerDark,
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
@@ -425,7 +421,6 @@ class SearchView extends StatelessWidget {
                 ),
               ),
 
-              // Dedicated Filter Button
               GestureDetector(
                 onTap: controller.openFilterSheet,
                 child: Container(
@@ -459,7 +454,7 @@ class SearchView extends StatelessWidget {
           ),
         ),
 
-        // Active Filters Banner (shows if custom sizing or sorting is active)
+        // Shown when a size filter or sort is active
         Obx(() {
           if (!controller.hasActiveFilters) return const SizedBox.shrink();
 
@@ -496,7 +491,6 @@ class SearchView extends StatelessWidget {
           );
         }),
 
-        // Products Grid
         Expanded(
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -567,7 +561,7 @@ class SearchView extends StatelessWidget {
     );
   }
 
-  /// Sort dropdown button
+  /// Sort menu.
   Widget _buildSortButton(BuildContext context, SearchCatalogController controller) {
     return Theme(
       data: Theme.of(context).copyWith(

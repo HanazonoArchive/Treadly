@@ -5,8 +5,7 @@ import 'package:flutter/services.dart';
 import '../models/shop_branch.dart';
 import '../models/tire.dart';
 
-/// FirebaseSyncService manages reading and writing data to Cloud Firestore.
-/// Ensures real-time mirroring and secondary/primary data persistence in Firebase.
+/// Firestore helpers for the catalog, profiles and one-time data cleanup.
 class FirebaseSyncService {
   static final FirebaseSyncService instance = FirebaseSyncService._internal();
   FirebaseSyncService._internal();
@@ -18,7 +17,7 @@ class FirebaseSyncService {
     return _firestore!;
   }
 
-  /// Syncs or seeds a list of rich tires to Firestore `tires` collection
+  /// Writes tires to the tires collection.
   Future<void> syncTires(List<Tire> tires) async {
     try {
       for (final tire in tires) {
@@ -33,7 +32,7 @@ class FirebaseSyncService {
     }
   }
 
-  /// Syncs user profile identity to Firestore `users`
+  /// Writes a profile to the users collection.
   Future<void> syncProfile({
     required String userId,
     required String name,
@@ -55,7 +54,7 @@ class FirebaseSyncService {
     }
   }
 
-  /// Retrieves user profile identity from Firestore `users`
+  /// Reads a profile from the users collection.
   Future<Map<String, dynamic>?> getProfile(String userId) async {
     if (userId.isEmpty) return null;
     try {
@@ -67,7 +66,7 @@ class FirebaseSyncService {
     }
   }
 
-  /// Purges any legacy short tire IDs from the Firestore `tires` collection
+  /// Deletes tires saved under old short ids.
   Future<void> cleanLegacyFirestoreTires() async {
     const legacyIds = [
       'michelin-ps5-225-45-18',
@@ -87,7 +86,7 @@ class FirebaseSyncService {
     await cleanDeprecatedCollections();
   }
 
-  /// Purges dead collections (user_vouchers, user_wallets, vouchers, wallets) from Firestore
+  /// Deletes collections from the removed wallet/voucher feature.
   Future<void> cleanDeprecatedCollections() async {
     const deprecatedCollections = [
       'user_vouchers',
@@ -113,18 +112,15 @@ class FirebaseSyncService {
     }
   }
 
-  /// Performs a complete mirror sync of tire catalog and demo profiles to Firestore.
+  /// Pushes the catalog and an optional profile to Firestore.
   Future<Map<String, dynamic>> performFullMirrorSync({String? userId, List<Tire>? customTires}) async {
     final Map<String, dynamic> report = {};
     try {
-      // 1. Clean legacy IDs from tires collection
       await cleanLegacyFirestoreTires();
 
-      // 2. Sync Flagship Workshop and clean legacy multi-branch documents
       await syncFlagshipWorkshop();
       report['workshop_synced'] = ShopBranch.flagship.name;
 
-      // 3. Sync full 15 modern tires
       List<Tire> tiresToSync = customTires ?? [];
       if (tiresToSync.isEmpty) {
         try {
@@ -137,7 +133,6 @@ class FirebaseSyncService {
         report['tires_synced'] = tiresToSync.length;
       }
 
-      // 3. Sync target user profile if specified, or demo_driver
       final targetUser = (userId != null && userId.isNotEmpty) ? userId : 'demo_driver';
       await syncProfile(
         userId: targetUser,
@@ -155,7 +150,7 @@ class FirebaseSyncService {
     }
   }
 
-  /// Syncs the Treadly flagship workshop to Firestore `shop_branches` and cleans deprecated branch documents
+  /// Writes the shop to shop_branches and removes old branch documents.
   Future<void> syncFlagshipWorkshop() async {
     try {
       await _db
@@ -180,12 +175,11 @@ class FirebaseSyncService {
     }
   }
 
-  /// Pushes test documents to live Firestore demo collections
+  /// Writes sample data for testing.
   Future<String?> testPushLiveDemoData() async {
     try {
-      // Sync Flagship Workshop
       await syncFlagshipWorkshop();
-      // 1. tires collection (Treadly Tire Catalog with full 15 models and rich schema)
+      // Tires
       try {
         final jsonString = await rootBundle.loadString('assets/data/tires.json');
         final catalogTires = Tire.fromJsonList(jsonString);
@@ -199,7 +193,7 @@ class FirebaseSyncService {
         debugPrint('[FirebaseSyncService] Catalog load note: $e');
       }
 
-      // 2. users collection (Driver Profiles)
+      // Users
       await _db.collection('users').doc('demo_driver').set({
         'user_id': 'demo_driver',
         'name': 'Demo Driver',

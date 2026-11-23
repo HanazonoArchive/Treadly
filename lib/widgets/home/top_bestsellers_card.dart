@@ -6,8 +6,7 @@ import '../../core/app_theme.dart';
 import '../../models/tire.dart';
 import '../../views/product_view.dart';
 
-/// Single unified box for Top 5 Bestsellers.
-/// Tire image slides left-to-right with circle indicators at the bottom-right corner.
+/// Best seller carousel on Home (top 5), with page dots.
 class TopBestsellersCard extends StatelessWidget {
   const TopBestsellersCard({super.key});
 
@@ -53,7 +52,6 @@ class TopBestsellersCard extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // PageView for the 5 Bestseller slides
               PageView.builder(
                 controller: controller.pageController,
                 itemCount: bestsellers.length,
@@ -64,7 +62,7 @@ class TopBestsellersCard extends StatelessWidget {
                 },
               ),
 
-              // Circle indicators at the bottom right corner
+              // Page dots
               Positioned(
                 bottom: 12,
                 right: 16,
@@ -106,14 +104,13 @@ class TopBestsellersCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-          // Left side: Text info
+          // Text
           Expanded(
             flex: 55,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Rank
                 Text(
                   'Best Seller #$rank',
                   style: const TextStyle(
@@ -125,7 +122,6 @@ class TopBestsellersCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
 
-                // Brand
                 Text(
                   tire.brand.toUpperCase(),
                   style: const TextStyle(
@@ -136,7 +132,6 @@ class TopBestsellersCard extends StatelessWidget {
                   ),
                 ),
 
-                // Model name
                 Text(
                   tire.model,
                   style: const TextStyle(
@@ -150,7 +145,6 @@ class TopBestsellersCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Price in PHP
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -179,7 +173,7 @@ class TopBestsellersCard extends StatelessWidget {
             ),
           ),
 
-          // Right side: Tire picture
+          // Image
           Expanded(
             flex: 45,
             child: Center(

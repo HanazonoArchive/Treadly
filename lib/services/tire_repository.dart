@@ -5,19 +5,15 @@ import 'package:flutter/services.dart';
 import '../models/tire.dart';
 import 'firebase_sync_service.dart';
 
-/// TireRepository orchestrates Treadly's Tire Catalog:
-/// 1. Cloud Database (Primary Live): Firebase Cloud Firestore `tires` collection
-/// 2. Asset Bundle (Offline Fallback): assets/data/tires.json (zero-failure guarantee)
+/// Loads the tire catalog from Firestore, falling back to
+/// assets/data/tires.json when Firestore is empty or offline.
 class TireRepository {
   static final TireRepository instance = TireRepository._internal();
   TireRepository._internal();
 
-  /// Fetches the catalog from Firebase Firestore with JSON asset fallback
   Future<List<Tire>> fetchTires() async {
-    // 1. Try Firebase Firestore
     List<Tire> tires = await _fetchFromFirestore();
 
-    // 2. Load bundled asset JSON
     List<Tire> fallbackList = [];
     try {
       final jsonString = await rootBundle.loadString('assets/data/tires.json');
@@ -26,8 +22,8 @@ class TireRepository {
       debugPrint('[TireRepository] Error loading fallback tires JSON: $e');
     }
 
-    // If Firestore has fewer tires than the full expanded catalog (e.g. catalog expansion to 100+ items),
-    // sync the full catalog to Firestore in background and return the complete list!
+    // Firestore is missing tires from the bundled catalog: upload them
+    // in the background and use the bundled list for now.
     if (fallbackList.isNotEmpty && tires.length < fallbackList.length) {
       debugPrint('[TireRepository] Expanded catalog detected (${fallbackList.length} tires vs ${tires.length} in Firestore). Syncing to Firestore...');
       FirebaseSyncService.instance.cleanLegacyFirestoreTires();
@@ -42,7 +38,6 @@ class TireRepository {
     return fallbackList;
   }
 
-  /// Fetches tires from Firebase Firestore `tires` collection
   Future<List<Tire>> _fetchFromFirestore() async {
     try {
       QuerySnapshot<Map<String, dynamic>> snapshot;
@@ -71,8 +66,7 @@ class TireRepository {
     return [];
   }
 
-  /// Deduplicates tires by unique ID, safely filtering legacy short IDs
-  /// while preserving distinct models and size variants.
+  /// Removes duplicates and tires saved under old short ids.
   List<Tire> _deduplicateTires(List<Tire> list) {
     const legacyIds = {
       'michelin-ps5-225-45-18',
@@ -107,7 +101,6 @@ class TireRepository {
     return uniqueTires.values.toList();
   }
 
-  /// Seeds or updates Firestore with catalog data
   Future<void> seedLiveDatabase(List<Tire> tires) async {
     try {
       final firestore = FirebaseFirestore.instance;
@@ -123,7 +116,7 @@ class TireRepository {
     }
   }
 
-  /// Decrements stock for purchased tires in Firestore
+  /// Not called yet; stock is adjusted by staff.
   Future<void> decrementStock({
     required String tireId,
     required int quantityDeducted,
@@ -142,7 +135,6 @@ class TireRepository {
     }
   }
 
-  /// Updates tire details (stock, specs, price) in Firestore
   Future<void> updateTire(Tire tire) async {
     try {
       await FirebaseFirestore.instance

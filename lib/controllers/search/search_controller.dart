@@ -43,7 +43,7 @@ class SearchCatalogController extends GetxController {
   final Rx<int?> selectedRim = Rx<int?>(null);
   final RxBool inStockOnly = false.obs;
 
-  /// Whether search has been explicitly submitted (allows empty search to load all tires)
+  /// True after the user submits a search, so an empty query still shows results.
   final RxBool isSearchSubmitted = false.obs;
 
   bool get isSearchActive =>
@@ -55,7 +55,7 @@ class SearchCatalogController extends GetxController {
       selectedRim.value != null ||
       inStockOnly.value;
 
-  // Recent search queries for search input screen
+  // Recent searches (max 10)
   final RxList<String> recentSearches = <String>[
     'Michelin Pilot Sport 5',
     '225/45 R18',
@@ -144,7 +144,7 @@ class SearchCatalogController extends GetxController {
     }
   }
 
-  /// Called when redirected from Home page or SearchInputView
+  /// Used by the Home search bar and category shortcuts.
   void applyExternalSearch({String query = '', String category = 'All', bool openFilter = false}) {
     final trimmedQuery = query.trim();
     searchQuery.value = trimmedQuery;
@@ -182,12 +182,11 @@ class SearchCatalogController extends GetxController {
     selectedCategory.value = cat;
   }
 
-  /// Sets the sort option directly from the dropdown / popup menu
   void setSortOption(SortOption option) {
     sortOption.value = option;
   }
 
-  /// Toggles through available sort options (fallback)
+  /// Cycles to the next sort option.
   void toggleSortOrder() {
     final nextIndex = (sortOption.value.index + 1) % SortOption.values.length;
     sortOption.value = SortOption.values[nextIndex];
@@ -214,11 +213,11 @@ class SearchCatalogController extends GetxController {
       inStockOnly.value ||
       sortOption.value != SortOption.relevance;
 
-  /// Computed Results list
+  /// Filtered and sorted catalog.
   List<Tire> get searchResults {
     var list = allTires.toList();
 
-    // 1. Text Search
+    // Text search
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
       list = list.where((t) {
@@ -232,12 +231,12 @@ class SearchCatalogController extends GetxController {
       }).toList();
     }
 
-    // 2. In-Stock Only filter
+    // In-stock only
     if (inStockOnly.value) {
       list = list.where((t) => !t.isOutOfStock).toList();
     }
 
-    // 3. Category filters: All, Set of 4, Performance, All-Season, SUV & 4x4
+    // Category chips
     if (selectedCategory.value == 'Set of 4') {
       list = list.where((t) => t.stock >= 4).toList();
     } else if (selectedCategory.value == 'Performance') {
@@ -277,7 +276,7 @@ class SearchCatalogController extends GetxController {
       }).toList();
     }
 
-    // 4. Sizing specifications
+    // Sizing Studio filters
     if (selectedWidth.value != null) {
       list = list.where((t) => t.width == selectedWidth.value).toList();
     }
@@ -288,10 +287,10 @@ class SearchCatalogController extends GetxController {
       list = list.where((t) => t.rimSize == selectedRim.value).toList();
     }
 
-    // 4. Sort
+    // Sort
     switch (sortOption.value) {
       case SortOption.relevance:
-        // Default catalog ranking
+        // Keep catalog order
         break;
       case SortOption.latest:
         list.sort((a, b) {
@@ -316,7 +315,7 @@ class SearchCatalogController extends GetxController {
     return list;
   }
 
-  /// Opens interactive sizing studio & blueprint visualizer bottom sheet
+  /// Opens the Tire Sizing Studio.
   void openFilterSheet() {
     Get.bottomSheet(
       const TireSizingStudioSheet(),

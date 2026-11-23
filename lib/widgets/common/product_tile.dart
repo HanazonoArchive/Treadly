@@ -5,9 +5,8 @@ import '../../core/app_theme.dart';
 import '../../models/tire.dart';
 import '../../views/product_view.dart';
 
-/// Universal Reusable Product Tile.
-/// Fixed-size consistent rectangle: Picture (top) -> Name (middle) -> Price in PHP (bottom).
-/// Tapping navigates to ProductView.
+/// Product card used in every grid: image, name and price.
+/// Tapping opens the product page.
 class ProductTile extends StatelessWidget {
   final Tire tire;
   final VoidCallback? onTap;
@@ -32,7 +31,7 @@ class ProductTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Picture (Top) with discount badge and stock state
+            // Image with stock badge
             Expanded(
               child: Stack(
                 children: [
@@ -80,7 +79,7 @@ class ProductTile extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // 2. Name (Middle): Brand + Model
+            // Brand and model
             Text(
               tire.brand.toUpperCase(),
               style: const TextStyle(
@@ -106,7 +105,7 @@ class ProductTile extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // 3. Price (Bottom) in PHP (₱)
+            // Price
             Container(
               padding: const EdgeInsets.only(top: 6),
               decoration: BoxDecoration(

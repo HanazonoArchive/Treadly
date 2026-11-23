@@ -1,6 +1,6 @@
 import '../core/pricing.dart';
 
-/// Represents the lifecycle status of a tire customer inquiry
+/// Order status. Labels shown to users: Unpaid, Placed, Confirmed, Installed, Cancelled.
 enum InquiryStatus {
   unpaid,
   submitted,
@@ -8,7 +8,7 @@ enum InquiryStatus {
   completed,
   cancelled;
 
-  // Backward compatibility getters
+  // Old names
   static InquiryStatus get inquiring => InquiryStatus.submitted;
   static InquiryStatus get confirmed => InquiryStatus.responded;
   static InquiryStatus get reserved => InquiryStatus.completed;
@@ -45,7 +45,7 @@ extension InquiryStatusX on InquiryStatus {
     }
   }
 
-  /// 1-based stage index for the visual connected stepper (1 to 3)
+  /// Position in the status stepper (0 = not on the stepper).
   int get stageStep {
     switch (this) {
       case InquiryStatus.unpaid:
@@ -88,7 +88,7 @@ extension InquiryStatusX on InquiryStatus {
   }
 }
 
-/// Represents a message in the inquiry conversation between customer and staff
+/// A chat message on an order.
 class InquiryMessage {
   final String id;
   final String senderId;
@@ -155,7 +155,7 @@ class InquiryMessage {
   }
 }
 
-/// Represents a customer tire stock inquiry and reservation for shop visit
+/// A customer order (stored in the inquiries collection).
 class TireInquiry {
   final String id;
   final String userId;
@@ -247,7 +247,7 @@ class TireInquiry {
   bool get hasCustomerUnread => !isClosed && (unreadCountForCustomer > 0 || !isCustomerViewed);
   bool get hasStaffUnread => !isClosed && (unreadCountForStaff > 0 || !isStaffViewed);
 
-  /// Returns the ID of the staff member who responded to or claimed this inquiry.
+  /// Staff member who claimed this order, if any.
   String? get effectiveAssignedStaffId {
     if (assignedStaffId != null && assignedStaffId!.isNotEmpty) {
       return assignedStaffId;
@@ -260,14 +260,13 @@ class TireInquiry {
     return null;
   }
 
-  /// Whether any staff member has already replied to this inquiry.
   bool get hasStaffReplied =>
       (assignedStaffId != null && assignedStaffId!.isNotEmpty) ||
       messages.any((m) => m.isStaff);
 
-  /// Checks whether this inquiry is visible to the given staff user.
-  /// - An inquiry with NO staff replies is visible to ALL staff (so any staff can pick it up).
-  /// - An inquiry that HAS a staff reply is ONLY visible to the staff who replied/claimed it.
+  /// Unclaimed orders are visible to all staff; claimed ones only to the
+  /// staff member who claimed them. Several fields are checked because
+  /// older orders stored the claim in different ways.
   bool isVisibleToStaff(
     String currentStaffId, {
     String? currentStaffEmail,
@@ -282,18 +281,18 @@ class TireInquiry {
     final cleanStaffName = (currentStaffName ?? '').trim().toLowerCase();
     final emailUsername = cleanStaffEmail.contains('@') ? cleanStaffEmail.split('@').first : '';
 
-    // 1. Exact Staff ID match
+    // Staff id
     if (staffId != null && staffId.isNotEmpty && staffId == currentStaffId) {
       return true;
     }
 
-    // 2. Staff Email match
+    // Email
     if (cleanStaffEmail.isNotEmpty) {
       if (staffId != null && staffId.toLowerCase() == cleanStaffEmail) return true;
       if (assignedStaffId != null && assignedStaffId!.toLowerCase() == cleanStaffEmail) return true;
     }
 
-    // 3. Staff Display Name match (e.g. 'jhon')
+    // Display name
     if (cleanStaffName.isNotEmpty && cleanStaffName != 'staff') {
       if (assignedStaffName != null && assignedStaffName!.trim().toLowerCase() == cleanStaffName) {
         return true;
@@ -303,7 +302,7 @@ class TireInquiry {
       }
     }
 
-    // 4. Staff Email Username match (e.g. 'jhon' from jhon@treadly.com)
+    // Email username
     if (emailUsername.isNotEmpty && emailUsername != 'staff') {
       if (assignedStaffName != null && assignedStaffName!.trim().toLowerCase() == emailUsername) {
         return true;
@@ -313,15 +312,14 @@ class TireInquiry {
       }
     }
 
-    // 5. Message Sender ID Match
+    // Sender id of a staff message
     final matchingMsg = messages.any((m) =>
         m.isStaff &&
         (m.senderId == currentStaffId ||
             (cleanStaffEmail.isNotEmpty && m.senderId.toLowerCase() == cleanStaffEmail)));
     if (matchingMsg) return true;
 
-    // 6. Generic legacy fallback: if staffId was literally 'staff' or unassigned
-    // and no other staff claimed it specifically, allow the staff desk
+    // Old orders claimed by the generic 'staff' account
     if ((staffId == null || staffId.isEmpty || staffId == 'staff') &&
         (assignedStaffName == null || assignedStaffName!.isEmpty || assignedStaffName!.toLowerCase() == 'staff')) {
       return true;
@@ -340,8 +338,7 @@ class TireInquiry {
     return id;
   }
 
-  /// Formats the initial introductory order message
-  /// containing tire specs, quantity, total amount, workshop, and customer note.
+  /// First chat message: order summary and customer note.
   String get startingInquiryMessageText {
     final buffer = StringBuffer();
     buffer.writeln('Treadly Order Details:');
@@ -363,8 +360,7 @@ class TireInquiry {
     return buffer.toString().trim();
   }
 
-  /// Returns the effective messages list. If messages is empty, automatically provides
-  /// the customer starting inquiry conversation message so staff has immediate context.
+  /// Messages, or the order summary if the chat is still empty.
   List<InquiryMessage> get effectiveMessages {
     if (messages.isNotEmpty) return messages;
     return [

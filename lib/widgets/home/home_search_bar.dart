@@ -5,8 +5,7 @@ import '../../controllers/navigation_controller.dart';
 import '../../controllers/search/search_controller.dart';
 import '../../core/app_theme.dart';
 
-/// Top Search Bar on Home feed:
-/// Directs the user to Tab 1 (Search view) with pre-keywords.
+/// Home search bar; opens the search screen.
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({super.key});
 

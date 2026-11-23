@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Default [FirebaseOptions] for Treadly.
-/// Configuration generated from Firebase Console for project 'treadly-9dd72'.
+/// Values from the Firebase console (project 'treadly-9dd72').
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {

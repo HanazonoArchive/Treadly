@@ -1,7 +1,4 @@
-"""
-Treadly Tire Dataset & Image Fetcher
-Automatically downloads transparent tire cutouts and builds assets/data/tires.json
-"""
+"""Downloads tire images into assets/images/tires and writes tires.json from the list below."""
 
 import os
 import io

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// Universal Tire Model for Treadly Catalog & Inquiries
+/// A tire in the catalog.
 class Tire {
   final String id;
   final String brand;
@@ -52,28 +52,24 @@ class Tire {
     required this.imageAsset,
   });
 
-  /// Universal Size string, e.g. "225/45 R18"
+  /// Size, e.g. "225/45 R18".
   String get size => '$width/$aspectRatio R$rimSize';
 
-  /// Full display name
   String get fullName => '$brand $model';
 
-  /// Base currency is Philippine Peso (PHP - ₱)
-  /// Converts stored USD prices (< 1000) by 56.0, or formats stored PHP prices directly.
+  /// Price in pesos. Prices under 1000 are stored in USD and converted at 56.
   double get priceInPhp => price < 1000 ? (price * 56.0).roundToDouble() : price;
 
-  /// Original crossed-out price in PHP (₱).
-  /// Uses original_price from DB if specified and greater than selling price.
-  /// Otherwise, applies the fixed discount calculator: selling price + 10% (crossed out as original price).
+  /// Crossed-out price: original_price if higher than the selling price,
+  /// otherwise selling price + 10%.
   double? get originalPriceInPhp {
     if (originalPrice != null && originalPrice! > price) {
       return originalPrice! < 1000 ? (originalPrice! * 56.0).roundToDouble() : originalPrice!;
     }
-    // Fixed discount calculator: crossed out original price = selling price + 10%
     return (priceInPhp * 1.10).roundToDouble();
   }
 
-  /// Formatted Estimated Price string in PHP, e.g. "Est. ₱12,320"
+  /// e.g. "Est. ₱12,320"
   String get formattedPrice {
     final php = priceInPhp.toInt();
     final formatted = php.toString().replaceAllMapped(
@@ -83,7 +79,7 @@ class Tire {
     return 'Est. ₱$formatted';
   }
 
-  /// Clean numeric formatted price without "Est." prefix, e.g. "₱12,320"
+  /// e.g. "₱12,320"
   String get rawFormattedPrice {
     final php = priceInPhp.toInt();
     final formatted = php.toString().replaceAllMapped(
@@ -93,11 +89,10 @@ class Tire {
     return '₱$formatted';
   }
 
-  /// Deprecated: fake discounts removed in favor of transparent estimated pricing
+  /// No longer used.
   int get discountPercentage => 0;
   String get formattedOriginalPrice => '';
 
-  /// Stock status helpers
   bool get isOutOfStock => stock <= 0;
   bool get isLowStock => stock > 0 && stock <= 5;
 
@@ -153,7 +148,7 @@ class Tire {
     );
   }
 
-  /// Normalizes legacy connected model names to clean separated words
+  /// Splits old run-together model names into words.
   static String normalizeModelName(String rawModel) {
     const Map<String, String> map = {
       'CrossContact LX25': 'Cross Contact LX25',
@@ -308,7 +303,7 @@ class Tire {
     return list.map((item) => Tire.fromJson(item as Map<String, dynamic>)).toList();
   }
 
-  /// Automatically matches tire brand and model to corresponding assets in `assets/images/tires/`
+  /// Picks the image in assets/images/tires/ that matches the brand and model.
   static String resolveImageAsset({String? explicit, String? brand, String? model}) {
     if (explicit != null && explicit.isNotEmpty) return explicit;
     final b = (brand ?? '').toLowerCase();

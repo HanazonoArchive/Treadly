@@ -6,9 +6,8 @@ import 'package:get/get.dart';
 import '../../controllers/search/search_controller.dart';
 import '../../core/app_theme.dart';
 
-/// Dynamic Tire Sizing Studio & Blueprint Visualizer
-/// Combines a real-time dual CustomPainter canvas (Front Stance & Side Profile)
-/// with an ergonomic 3-column tumbler wheel picker for Width, Aspect Ratio, and Rim.
+/// Tire Sizing Studio bottom sheet: width/rim diagrams drawn with CustomPainter
+/// plus scroll pickers for width, aspect ratio and rim.
 class TireSizingStudioSheet extends StatefulWidget {
   const TireSizingStudioSheet({super.key});
 
@@ -19,7 +18,7 @@ class TireSizingStudioSheet extends StatefulWidget {
 class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
   final SearchCatalogController controller = Get.find<SearchCatalogController>();
 
-  // Dynamically populated sizing parameter datasets from active catalog
+  // Picker values, built from the sizes in the catalog
   late final List<int?> widths;
   late final List<int?> ratios;
   late final List<int?> rims;
@@ -32,7 +31,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
   void initState() {
     super.initState();
 
-    // 1. Dynamically extract unique sorted dimensions from active tire inventory
+    // Unique sorted sizes from the catalog
     final catalogWidths = controller.allTires
         .map((t) => t.width)
         .where((w) => w > 0)
@@ -128,7 +127,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Top Header: Just "Filter" on the left, "Reset" on the right
+              // Header: title and Reset
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -157,7 +156,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
               ),
               const SizedBox(height: 12),
 
-              // 2. Dual Canvas Visualizer Box (Front Stance & Side Profile)
+              // Diagrams
               Obx(() {
                 final w = controller.selectedWidth.value;
                 final r = controller.selectedRatio.value;
@@ -172,20 +171,19 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                   ),
                   child: Row(
                     children: [
-                      // Left Panel: Front View (Width & Tread)
+                      // Front view (width)
                       Expanded(
                         child: CustomPaint(
                           painter: TireFrontPainter(width: w),
                           child: Container(),
                         ),
                       ),
-                      // Subtle vertical divider between views
                       Container(
                         width: 1,
                         height: 110,
                         color: const Color(0xFFE2E8F0),
                       ),
-                      // Right Panel: Side View (Rim & Sidewall)
+                      // Side view (rim)
                       Expanded(
                         child: CustomPaint(
                           painter: TireSidePainter(rim: rim, ratio: r),
@@ -200,7 +198,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
 
               const SizedBox(height: 12),
 
-              // 4. 3-Column Tumbler Wheel Picker (Width, Ratio, Rim)
+              // Pickers
               Container(
                 height: 110,
                 decoration: BoxDecoration(
@@ -210,7 +208,6 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                 ),
                 child: Row(
                   children: [
-                    // Column 1: WIDTH (mm)
                     Expanded(
                       child: _buildPickerColumn(
                         label: 'WIDTH (mm)',
@@ -222,7 +219,6 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                     ),
                     Container(width: 1, height: 80, color: AppTheme.borderDark),
 
-                    // Column 2: RATIO (%)
                     Expanded(
                       child: _buildPickerColumn(
                         label: 'PROFILE (%)',
@@ -234,7 +230,6 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                     ),
                     Container(width: 1, height: 80, color: AppTheme.borderDark),
 
-                    // Column 3: RIM (in)
                     Expanded(
                       child: _buildPickerColumn(
                         label: 'RIM (in)',
@@ -249,7 +244,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
               ),
               const SizedBox(height: 12),
 
-              // 4. In-Stock Only Switch (Clean transparent row, no icon, no background, no border)
+              // In-stock only
               Obx(() => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                     child: Row(
@@ -276,7 +271,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
                   )),
               const SizedBox(height: 12),
 
-              // 6. Apply Button with Live Matching Counter
+              // Apply button with match count
               Obx(() {
                 final matchCount = controller.searchResults.length;
                 final hasMatches = matchCount > 0;
@@ -371,7 +366,7 @@ class _TireSizingStudioSheetState extends State<TireSizingStudioSheet> {
   }
 }
 
-/// CustomPainter: Front Stance View (Wireframe Tread Width & Grooves)
+/// Front view of the tire; drawn width follows the selected section width.
 class TireFrontPainter extends CustomPainter {
   final int? width;
 
@@ -380,7 +375,7 @@ class TireFrontPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final effectiveWidth = (width ?? 225).clamp(165, 335).toDouble();
-    // Normalize width between 165 and 335 -> visual width between 34 and 76 px
+    // Map 165-335 mm to 34-76 px.
     final norm = (effectiveWidth - 165) / 170.0;
     final tireW = 34.0 + (norm * 42.0);
     const tireH = 74.0;
@@ -389,20 +384,20 @@ class TireFrontPainter extends CustomPainter {
     final tireRect = Rect.fromCenter(center: center, width: tireW, height: tireH);
     final rrect = RRect.fromRectAndRadius(tireRect, const Radius.circular(6));
 
-    // 1. Crisp white background fill (wireframe canvas)
+    // Background
     final fillPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     canvas.drawRRect(rrect, fillPaint);
 
-    // 2. Wireframe black outline
+    // Outline
     final linePaint = Paint()
       ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
     canvas.drawRRect(rrect, linePaint);
 
-    // 3. Inner shoulder wireframe guide lines
+    // Shoulder lines
     final shoulderPaint = Paint()
       ..color = const Color(0xFFCBD5E1)
       ..style = PaintingStyle.stroke
@@ -418,7 +413,7 @@ class TireFrontPainter extends CustomPainter {
       shoulderPaint,
     );
 
-    // 4. Longitudinal Tread Wireframe Grooves
+    // Tread grooves
     final groovePaint = Paint()
       ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
@@ -434,7 +429,7 @@ class TireFrontPainter extends CustomPainter {
       );
     }
 
-    // 5. Technical drafting measurement bracket on top
+    // Width dimension line
     final caliperY = center.dy - tireH / 2 - 8;
     final draftingPaint = Paint()
       ..color = const Color(0xFF0F172A)
@@ -444,12 +439,10 @@ class TireFrontPainter extends CustomPainter {
     final leftX = center.dx - tireW / 2;
     final rightX = center.dx + tireW / 2;
 
-    // Horizontal dimension line with end tick markers
     canvas.drawLine(Offset(leftX, caliperY), Offset(rightX, caliperY), draftingPaint);
     canvas.drawLine(Offset(leftX, caliperY - 3), Offset(leftX, caliperY + 3), draftingPaint);
     canvas.drawLine(Offset(rightX, caliperY - 3), Offset(rightX, caliperY + 3), draftingPaint);
 
-    // Measurement text in technical black
     final textSpan = TextSpan(
       text: width != null ? '$width mm' : 'Width',
       style: const TextStyle(
@@ -473,7 +466,7 @@ class TireFrontPainter extends CustomPainter {
   bool shouldRepaint(covariant TireFrontPainter oldDelegate) => oldDelegate.width != width;
 }
 
-/// CustomPainter: Side Profile View (Wireframe Rim & Sidewall Ring)
+/// Side view of the wheel; rim size changes the drawn rim radius.
 class TireSidePainter extends CustomPainter {
   final int? rim;
   final int? ratio;
@@ -487,38 +480,38 @@ class TireSidePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2 + 4);
     const outerRadius = 40.0;
 
-    // Rim radius scales from 18.0 to 30.0 based on rim size
+    // Rim radius 18-30 px depending on rim size.
     final rimNorm = (effectiveRim - 13) / 9.0;
     final rimRadius = 18.0 + (rimNorm * 12.0);
 
-    // 1. Fill background pure white
+    // Background
     final fillPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, outerRadius, fillPaint);
 
-    // 2. Outer tire circumference (wireframe black line)
+    // Tire outline
     final outerTirePaint = Paint()
       ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
     canvas.drawCircle(center, outerRadius, outerTirePaint);
 
-    // 3. Inner sidewall contour line (technical drafting wireframe)
+    // Sidewall
     final sidewallPaint = Paint()
       ..color = const Color(0xFFCBD5E1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawCircle(center, outerRadius - 4, sidewallPaint);
 
-    // 4. Rim lip ring (wireframe black line)
+    // Rim
     final rimPaint = Paint()
       ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawCircle(center, rimRadius, rimPaint);
 
-    // 5. Wheel Spokes (clean geometric wireframe lines)
+    // Spokes
     final spokePaint = Paint()
       ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
@@ -534,7 +527,7 @@ class TireSidePainter extends CustomPainter {
       canvas.drawLine(center, spokeEnd, spokePaint);
     }
 
-    // 6. Hub Center Cap (wireframe ring and center point)
+    // Hub
     final hubBorder = Paint()
       ..color = const Color(0xFF0F172A)
       ..style = PaintingStyle.stroke
@@ -546,7 +539,7 @@ class TireSidePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, 2.0, hubCenter);
 
-    // 7. Technical drafting measurement bracket on top
+    // Rim dimension line
     final caliperY = center.dy - outerRadius - 8;
     final draftingPaint = Paint()
       ..color = const Color(0xFF0F172A)

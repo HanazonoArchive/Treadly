@@ -5,8 +5,7 @@ import '../../controllers/navigation_controller.dart';
 import '../../controllers/search/search_controller.dart';
 import '../../core/app_theme.dart';
 
-/// Fixed 4-column action buttons grid (NO swiping needed).
-/// Tapping redirects to Tab 1 (SearchView) with that category pre-filtered.
+/// Category shortcuts on Home; each opens Search with that category.
 class HomeActionGrid extends StatelessWidget {
   const HomeActionGrid({super.key});
 

@@ -11,9 +11,9 @@ import '../services/firebase_sync_service.dart';
 import 'inquiry/inquiry_controller.dart';
 import 'sync_controller.dart';
 
-/// AuthController manages user session state (Guest vs Authenticated).
-/// Uses Firebase Cloud Firestore as the primary user database,
-/// with persistent local session caching via SharedPreferences.
+/// Sign-in state (guest or signed in). Passwords are checked by Firebase
+/// Authentication; profiles live in the Firestore users collection and the
+/// session is cached in SharedPreferences.
 class AuthController extends GetxController {
   final RxBool isGuest = true.obs;
   final RxString displayName = 'Guest'.obs;
@@ -22,7 +22,7 @@ class AuthController extends GetxController {
   final RxString avatarUrl = ''.obs;
   final RxBool isLoading = false.obs;
 
-  /// Returns true if the authenticated user has an official shop email (@treadly.com)
+  /// Staff accounts use an @treadly.com email.
   bool get isStaff => userEmail.value.trim().toLowerCase().endsWith('@treadly.com');
 
   @override
@@ -91,17 +91,14 @@ class AuthController extends GetxController {
       _persistSession(newUserId, email, name, avatar);
     }
 
-    // Sync latest user session from Firestore
     if (Get.isRegistered<SyncController>()) {
       Get.find<SyncController>().syncUserData(newUserId);
     }
 
-    // Sync inquiries for the newly active session (especially staff portal)
     if (Get.isRegistered<InquiryController>()) {
       Get.find<InquiryController>().onUserSessionChanged();
     }
 
-    // Ensure profile document is maintained in Firestore
     FirebaseSyncService.instance.syncProfile(
       userId: newUserId,
       name: displayName.value,
@@ -110,7 +107,7 @@ class AuthController extends GetxController {
     );
   }
 
-  /// Updates display name and persists to local storage and Firestore
+  /// Saves a new display name locally and to Firestore.
   Future<void> updateDisplayName(String newName) async {
     final trimmed = newName.trim();
     if (trimmed.isEmpty) return;
@@ -162,9 +159,7 @@ class AuthController extends GetxController {
     } catch (_) {}
   }
 
-  /// Sign In with Email & Password.
-  /// The password is verified by Firebase Authentication; the Firestore
-  /// `users` document only stores the profile (name, avatar, user_id).
+  /// Signs in with Firebase Authentication, then loads the Firestore profile.
   Future<bool> signIn({required String email, required String password}) async {
     isLoading.value = true;
     final cleanEmail = email.trim().toLowerCase();
@@ -208,10 +203,8 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Sign Up with Email & Password.
-  /// Firebase Authentication rejects emails that are already registered.
-  /// Staff (@treadly.com) accounts cannot self-register; the shop
-  /// administrator creates them in the Firebase console.
+  /// Creates a Firebase Authentication account. @treadly.com (staff)
+  /// accounts are created by the admin in the Firebase console instead.
   Future<bool> signUp({required String email, required String password}) async {
     final cleanEmail = email.trim().toLowerCase();
 
@@ -254,9 +247,8 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Finds the Firestore profile for this email (keeping the user_id of
-  /// accounts created before Firebase Authentication was added, so their
-  /// existing orders stay linked) or creates one keyed by the Auth UID.
+  /// Finds the profile for this email or creates one. Accounts from before
+  /// Firebase Auth keep their old user_id so their orders stay linked.
   Future<({String uid, String name, String avatar})> _loadOrCreateProfile(
     String cleanEmail,
     String authUid,
@@ -323,7 +315,7 @@ class AuthController extends GetxController {
     );
   }
 
-  /// Sign Out and reset local state
+  /// Signs out and clears local data.
   Future<void> signOut({bool silent = false}) async {
     try {
       await fb.FirebaseAuth.instance.signOut();
@@ -338,12 +330,10 @@ class AuthController extends GetxController {
     userId.value = '';
     avatarUrl.value = '';
 
-    // Reset local data back to initial state
     if (Get.isRegistered<SyncController>()) {
       Get.find<SyncController>().resetLocalData();
     }
 
-    // Reset inquiries on logout so customer info never lingers on the app
     if (Get.isRegistered<InquiryController>()) {
       await Get.find<InquiryController>().clearOnSignOut();
     }

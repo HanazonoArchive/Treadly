@@ -12,7 +12,7 @@ void main() {
   List<Tire> loadCatalog() =>
       Tire.fromJsonList(File('assets/data/tires.json').readAsStringSync());
 
-  group('Order status mapping (WB-01, WB-02)', () {
+  group('Order status mapping (CWB-01, CWB-02)', () {
     test('legacy status strings map to the current lifecycle', () {
       expect(InquiryStatusX.fromString('confirmed'), InquiryStatus.responded);
       expect(InquiryStatusX.fromString('prepped in bay'), InquiryStatus.responded);
@@ -32,7 +32,7 @@ void main() {
     });
   });
 
-  test('Staff detection ignores case and spaces (WB-08)', () {
+  test('Staff detection ignores case and spaces (SWB-03)', () {
     final auth = AuthController();
     auth.userEmail.value = ' Tech@Treadly.com ';
     expect(auth.isStaff, isTrue);
@@ -47,7 +47,7 @@ void main() {
       search.allTires.addAll(loadCatalog());
     });
 
-    test('SUV & 4x4 only returns SUV, terrain or truck tires (WB-12)', () {
+    test('SUV & 4x4 only returns SUV, terrain or truck tires (CWB-09)', () {
       search.selectedCategory.value = 'SUV & 4x4';
       final names = search.searchResults.map((t) => t.fullName.toLowerCase());
       expect(names, isNotEmpty);
@@ -55,21 +55,21 @@ void main() {
       expect(names.any((n) => n.contains('cargo marathon')), isFalse);
     });
 
-    test('All-Season never includes summer tires (WB-13)', () {
+    test('All-Season never includes summer tires (CWB-10)', () {
       search.selectedCategory.value = 'All-Season';
       final results = search.searchResults;
       expect(results, isNotEmpty);
       expect(results.any((t) => t.season.toLowerCase().contains('summer')), isFalse);
     });
 
-    test('size search returns only that size (BB-02)', () {
+    test('size search returns only that size (CBB-02)', () {
       search.searchQuery.value = '225/45 R18';
       final results = search.searchResults;
       expect(results, isNotEmpty);
       expect(results.every((t) => t.size == '225/45 R18'), isTrue);
     });
 
-    test('recent searches keep only the latest 10 (WB-14)', () {
+    test('recent searches keep only the latest 10 (CWB-11)', () {
       for (var i = 0; i < 12; i++) {
         search.addRecentSearch('query $i');
       }

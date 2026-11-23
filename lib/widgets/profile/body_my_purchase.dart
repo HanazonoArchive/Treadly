@@ -6,12 +6,7 @@ import '../../controllers/inquiry/inquiry_controller.dart';
 import '../../controllers/navigation_controller.dart';
 import '../../core/app_theme.dart';
 
-/// Clean Customer Orders Section for Driver Profile.
-/// Real-world BOPIS tire order lifecycle:
-/// 1. Placed (Order received)
-/// 2. Confirmed (Workshop confirmed stock and bay ready)
-/// 3. Installed (Customer visited bay, fitted, and paid)
-/// 4. Cancelled (Order cancelled)
+/// My Orders shortcuts on the Profile tab, one per status.
 class MyPurchaseSection extends StatelessWidget {
   MyPurchaseSection({super.key});
 

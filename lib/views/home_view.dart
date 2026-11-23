@@ -27,9 +27,8 @@ class HomeView extends StatelessWidget {
     final auth = Get.find<AuthController>();
 
     return Obx(() {
-      // 2-System Architecture triggered by account email domain:
-      // Accounts with @treadly.com are Shop Staff and see the Shop Desk Portal.
-      // All other accounts (or guests) see the Client Tire Retail App.
+      // Staff (@treadly.com) get the Treadly Desk; everyone else gets the
+      // customer app.
       if (!auth.isGuest.value && auth.isStaff) {
         return const ShopDashboardView();
       }

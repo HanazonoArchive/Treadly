@@ -13,14 +13,14 @@ import '../../models/tire.dart';
 import '../../services/firebase_sync_service.dart';
 import '../auth_controller.dart';
 
-/// Central Controller for Inquiries & Reservations (Customer + Shop Admin)
+/// Orders (inquiries), chat and analytics for both customers and staff.
 class InquiryController extends GetxController {
   static const String _prefInquiriesKey = 'treadly_local_inquiries_cache';
   static const String _prefRoleKey = 'treadly_active_role_portal';
   static const String _prefBranchesKey = 'treadly_shop_branches_cache';
   static const String _prefActiveBranchKey = 'treadly_active_branch_id';
 
-  // Demo Role Toggle: false = Customer Portal, true = Shop Admin Portal
+  // Portal toggle: false = customer, true = staff.
   final RxBool isShopPortal = false.obs;
 
   // Inquiries collections
@@ -28,11 +28,9 @@ class InquiryController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString selectedFilter = 'All'.obs;
 
-  // ===========================================================================
-  // MOBILE-NATIVE STORE ANALYTICS GETTERS
-  // ===========================================================================
+  // Analytics
 
-  /// Total Gross Revenue from Completed orders (or non-cancelled orders)
+  /// Revenue from completed orders (falls back to all non-cancelled orders).
   double get totalRevenue {
     final completed = inquiries.where((inq) => inq.status == InquiryStatus.completed);
     if (completed.isNotEmpty) {
@@ -43,14 +41,13 @@ class InquiryController extends GetxController {
         .fold(0.0, (acc, inq) => acc + inq.totalPrice);
   }
 
-  /// Total units of tires fitted / ordered
+  /// Number of tires installed or ordered.
   int get totalUnitsFitted {
     return inquiries
         .where((inq) => inq.status != InquiryStatus.cancelled)
         .fold(0, (acc, inq) => acc + inq.totalTiresCount);
   }
 
-  /// Total completed orders count
   int get completedOrdersCount =>
       inquiries.where((inq) => inq.status == InquiryStatus.completed).length;
 
@@ -62,14 +59,14 @@ class InquiryController extends GetxController {
   int get bayReadyCount =>
       inquiries.where((inq) => inq.status == InquiryStatus.responded).length;
 
-  /// Average Order Value (AOV)
+  /// Average order value.
   double get averageOrderValue {
     final valid = inquiries.where((inq) => inq.status != InquiryStatus.cancelled).toList();
     if (valid.isEmpty) return 0.0;
     return totalRevenue / valid.length;
   }
 
-  /// Share of orders that are 'Set of 4' bundle vs 'Single' replacements
+  /// Share of orders that are Set of 4.
   double get setOfFourRatio {
     final valid = inquiries.where((inq) => inq.status != InquiryStatus.cancelled).toList();
     if (valid.isEmpty) return 0.70;
@@ -77,11 +74,10 @@ class InquiryController extends GetxController {
     return setOfFourCount / valid.length;
   }
 
-  /// Top 5 Bestselling Tires derived from live orders
+  /// Top 5 tires by units ordered.
   List<Map<String, dynamic>> get topSellingTiresAnalytics =>
       getTopSellingTiresWithSort(sortBy: 'units', timeframe: 'All Time').take(5).toList();
 
-  /// Filter inquiries by timeframe
   List<TireInquiry> getInquiriesForTimeframe(String timeframe) {
     final now = DateTime.now();
     final valid = inquiries.where((i) => i.status != InquiryStatus.cancelled).toList();
@@ -99,7 +95,6 @@ class InquiryController extends GetxController {
     return valid;
   }
 
-  /// Revenue computed for a specific timeframe
   double getTimeframeRevenue(String timeframe) {
     final inqs = getInquiriesForTimeframe(timeframe);
     final completed = inqs.where((inq) => inq.status == InquiryStatus.completed);
@@ -109,20 +104,17 @@ class InquiryController extends GetxController {
     return inqs.fold(0.0, (acc, inq) => acc + inq.totalPrice);
   }
 
-  /// Units fitted for timeframe
   int getTimeframeUnitsFitted(String timeframe) {
     return getInquiriesForTimeframe(timeframe)
         .fold(0, (acc, inq) => acc + inq.totalTiresCount);
   }
 
-  /// Completed count for timeframe
   int getTimeframeCompletedCount(String timeframe) {
     return getInquiriesForTimeframe(timeframe)
         .where((i) => i.status == InquiryStatus.completed)
         .length;
   }
 
-  /// Average order value for timeframe
   double getTimeframeAov(String timeframe) {
     final inqs = getInquiriesForTimeframe(timeframe);
     if (inqs.isEmpty) return 0.0;
@@ -136,7 +128,7 @@ class InquiryController extends GetxController {
     return (completedOrdersCount / total) * 100.0;
   }
 
-  /// Top Selling Tires with sorting (units, revenue, brand) and timeframe
+  /// Top-selling tires for a timeframe, sorted by units, revenue or brand.
   List<Map<String, dynamic>> getTopSellingTiresWithSort({
     String sortBy = 'units',
     String timeframe = 'All Time',
@@ -170,7 +162,7 @@ class InquiryController extends GetxController {
     return list;
   }
 
-  /// Export analytics dataset to clean CSV format
+  /// CSV export for the Analytics tab.
   String generateCsvExport({String timeframe = 'All Time'}) {
     final inqs = getInquiriesForTimeframe(timeframe);
     final buffer = StringBuffer();
@@ -202,7 +194,7 @@ class InquiryController extends GetxController {
     return buffer.toString();
   }
 
-  /// Export formatted text summary for direct pasting into messaging or email
+  /// Plain-text summary for pasting into a message or email.
   String generateExecutiveTextSummary({String timeframe = 'All Time'}) {
     final buffer = StringBuffer();
     buffer.writeln('TREADLY WORKSHOP EXECUTIVE SUMMARY');
@@ -230,7 +222,7 @@ class InquiryController extends GetxController {
   final RxList<ShopBranch> branches = <ShopBranch>[].obs;
   final Rx<ShopBranch> activeBranch = ShopBranch.defaultBranches.first.obs;
 
-  // Staff Directory & Active Staff Display Name tracking
+  // Staff names, keyed by staff id.
   final RxMap<String, String> staffNames = <String, String>{}.obs;
   final RxString activeStaffDisplayName = 'jhon'.obs;
 
@@ -258,7 +250,7 @@ class InquiryController extends GetxController {
     await _loadLocalInquiries();
     _startFirestoreInquiriesStream();
 
-    // Sync flagship workshop and clean legacy tire data and dead collections in Firebase
+    // Make sure the shop record exists and remove old test data from Firestore.
     FirebaseSyncService.instance.cleanLegacyFirestoreTires();
     FirebaseSyncService.instance.cleanDeprecatedCollections();
     FirebaseSyncService.instance.syncFlagshipWorkshop();
@@ -279,7 +271,7 @@ class InquiryController extends GetxController {
     } catch (_) {}
   }
 
-  /// Triggers an immediate refresh and re-subscription when the user session or role changes
+  /// Re-subscribe to Firestore when the signed-in user changes.
   void onUserSessionChanged() {
     _startFirestoreInquiriesStream();
     refreshInquiries();
@@ -295,7 +287,7 @@ class InquiryController extends GetxController {
     } catch (_) {}
   }
 
-  /// Queries the Firestore `users` collection to discover registered staff display names
+  /// Loads staff display names from the users collection.
   Future<void> fetchStaffDirectory() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('users').get();
@@ -322,9 +314,7 @@ class InquiryController extends GetxController {
     }
   }
 
-  // ===========================================================================
-  // SHOP BRANCH CRUD & PERSISTENCE
-  // ===========================================================================
+  // Shop branches
 
   Future<void> _loadPersistedBranches() async {
     try {
@@ -357,13 +347,12 @@ class InquiryController extends GetxController {
   Future<void> _fetchBranchesFromFirestore() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('shop_branches').get();
-      // Ensure flagship branch is mirrored in Firestore
       await FirebaseFirestore.instance
           .collection('shop_branches')
           .doc(ShopBranch.flagship.id)
           .set(ShopBranch.flagship.toJson(), SetOptions(merge: true));
 
-      // Clean old multi-branch documents
+      // Skip old multi-branch documents.
       for (final doc in snapshot.docs) {
         if (doc.id != ShopBranch.flagship.id) {
           try {
@@ -452,17 +441,14 @@ class InquiryController extends GetxController {
     return true;
   }
 
-  // ===========================================================================
-  // COMPUTED COUNTS FOR THE 3 REAL-WORLD STAGES
-  // ===========================================================================
+  // Order lists and counts
 
   bool get _isStaffViewer {
     if (!Get.isRegistered<AuthController>()) return false;
     return Get.find<AuthController>().isStaff;
   }
 
-  /// Returns inquiries belonging to the currently logged in customer.
-  /// If user is guest / logged out, returns empty list so no data is retained.
+  /// Orders of the signed-in customer (empty for guests).
   List<TireInquiry> get customerInquiries {
     if (!Get.isRegistered<AuthController>()) return [];
     final auth = Get.find<AuthController>();
@@ -481,10 +467,8 @@ class InquiryController extends GetxController {
     }).toList();
   }
 
-  /// Returns the inquiries visible to the current staff user.
-  /// - Cancelled inquiries are automatically removed from conversations.
-  /// - Submitted/unassigned inquiries are visible to all staff so anyone can reply.
-  /// - Responded/completed inquiries are ONLY visible to the staff member who replied.
+  /// Orders visible to the signed-in staff member: unclaimed orders are visible
+  /// to everyone, claimed ones only to the staff member who replied.
   List<TireInquiry> get staffInquiries {
     String currentStaffId = '';
     String currentStaffEmail = '';
@@ -533,7 +517,7 @@ class InquiryController extends GetxController {
       ? staffInquiries.where((i) => i.status == InquiryStatus.cancelled).length
       : customerInquiries.where((i) => i.status == InquiryStatus.cancelled).length;
 
-  // Unread badge counts for customer top-bar and portal
+  // Unread badge counts
   int get unreadResponsesCount => customerInquiries
       .where((i) => i.status != InquiryStatus.cancelled && i.status != InquiryStatus.completed && i.hasCustomerUnread)
       .length;
@@ -542,7 +526,7 @@ class InquiryController extends GetxController {
       .where((i) => i.status != InquiryStatus.cancelled && i.status != InquiryStatus.completed && i.hasStaffUnread)
       .length;
 
-  /// Smart Category Unread Badge Counter for Messenger filter buttons
+  /// Unread count for one chat filter chip.
   int getCategoryUnreadCount(String category, {required bool isStaff}) {
     final list = isStaff ? staffInquiries : customerInquiries;
     final active = list.where((i) => i.status != InquiryStatus.cancelled && i.status != InquiryStatus.completed);
@@ -574,8 +558,7 @@ class InquiryController extends GetxController {
   int get confirmedCount => respondedCount;
   int get installedCount => completedCount;
 
-  /// Active ongoing inquiries (Unpaid + Placed + Confirmed).
-  /// Excludes completed inquiries so completed conversations immediately reduce or remove the Inquiries tab badge!
+  /// Unpaid, Placed and Confirmed orders (not yet installed or cancelled).
   List<TireInquiry> get activeInquiries => (_isStaffViewer ? staffInquiries : customerInquiries)
       .where((i) =>
           i.status == InquiryStatus.unpaid ||
@@ -587,9 +570,7 @@ class InquiryController extends GetxController {
       .where((i) => i.status == InquiryStatus.cancelled)
       .toList();
 
-  // ===========================================================================
-  // ROLE / PORTAL SWITCHER
-  // ===========================================================================
+  // Portal switch
 
   void togglePortal() async {
     isShopPortal.value = !isShopPortal.value;
@@ -606,9 +587,7 @@ class InquiryController extends GetxController {
     } catch (_) {}
   }
 
-  // ===========================================================================
-  // CUSTOMER: SUBMIT INQUIRY
-  // ===========================================================================
+  // Creating orders
 
   Future<TireInquiry> createInquiry({
     required Tire tire,
@@ -712,7 +691,7 @@ class InquiryController extends GetxController {
     return newInquiry;
   }
 
-  /// Customer marks an order as paid, changing status to Placed (submitted)
+  /// Records the payment and moves the order to Placed.
   Future<void> markOrderAsPaid(String inquiryId, {String paymentMethod = 'GCash'}) async {
     final idx = inquiries.indexWhere((i) => i.id == inquiryId);
     if (idx == -1) return;
@@ -744,12 +723,9 @@ class InquiryController extends GetxController {
     _syncInquiryToFirestore(updated);
   }
 
-  // ===========================================================================
-  // CONVERSATION & CHAT MESSAGING
-  // ===========================================================================
+  // Chat
 
-  /// Sends a message in the inquiry thread.
-  /// If staff sends a message, automatically updates inquiry status to 'responded'!
+  /// Sends a chat message. A staff reply to a Placed order confirms it.
   Future<void> sendInquiryMessage({
     required String inquiryId,
     required String text,
@@ -806,15 +782,13 @@ class InquiryController extends GetxController {
 
     final updatedMessages = List<InquiryMessage>.from(currentInquiry.effectiveMessages)..add(message);
 
-    // Automatic status promotion:
-    // If staff responds and the status is currently submitted, automatically move to responded!
+    // First staff reply moves a Placed order to Confirmed.
     InquiryStatus newStatus = currentInquiry.status;
     if (isStaffSender && currentInquiry.status == InquiryStatus.submitted) {
       newStatus = InquiryStatus.responded;
     }
 
-    // Ownership claim:
-    // When a staff member replies to an inquiry, they initialize/claim it so only they see and talk on it!
+    // The staff member who replies first claims the order.
     String? assignedId = currentInquiry.assignedStaffId;
     String? assignedName = currentInquiry.assignedStaffName;
     if (isStaffSender) {
@@ -859,7 +833,7 @@ class InquiryController extends GetxController {
     }
   }
 
-  /// Marks messages in the conversation as read depending on whether the viewer is staff or customer
+  /// Marks the other side's messages as read.
   Future<void> markMessagesAsRead(String inquiryId, {required bool isStaffViewer}) async {
     final index = inquiries.indexWhere((i) => i.id == inquiryId);
     if (index < 0) return;
@@ -918,16 +892,14 @@ class InquiryController extends GetxController {
     }
   }
 
-  // ===========================================================================
-  // UPDATE STATUS (SUBMITTED -> RESPONDED -> COMPLETED)
-  // ===========================================================================
+  // Status changes
 
   Future<void> updateInquiryStatus(String inquiryId, InquiryStatus newStatus) async {
     final index = inquiries.indexWhere((i) => i.id == inquiryId);
     if (index >= 0) {
       final inq = inquiries[index];
 
-      // Rule: Inquiries in completed state cannot be cancelled
+      // Installed orders cannot be cancelled.
       if (inq.status == InquiryStatus.completed && newStatus == InquiryStatus.cancelled) {
         debugPrint('[InquiryController] Blocked attempt to cancel completed inquiry #$inquiryId');
         return;
@@ -980,7 +952,7 @@ class InquiryController extends GetxController {
     }
   }
 
-  /// Updates display name across all conversations where this staff member has participated
+  /// Renames a staff member in every chat they took part in.
   Future<void> updateStaffDisplayName({required String staffId, required String newDisplayName}) async {
     final cleanName = newDisplayName.trim();
     if (cleanName.isEmpty) return;
@@ -1045,8 +1017,8 @@ class InquiryController extends GetxController {
     }
   }
 
-  /// Cleans up legacy ' (Staff)' suffixes, binds generic 'staff' names to the active staff profile,
-  /// and updates Firestore so data is permanently repaired across all devices.
+  /// Fixes old data: strips ' (Staff)' suffixes and replaces the generic 'staff' name
+  /// with the real staff name, then saves the fix to Firestore.
   void sanitizeStaffData() {
     String resolvedStaffName = activeStaffDisplayName.value.trim();
     if (resolvedStaffName.isEmpty || resolvedStaffName.toLowerCase() == 'staff') {
@@ -1076,7 +1048,7 @@ class InquiryController extends GetxController {
       String? assignedId = inq.assignedStaffId;
       String? assignedName = inq.assignedStaffName;
 
-      // Repair generic or missing assignedStaffName
+      // Fill in a missing or generic assignedStaffName.
       if (assignedName == null || assignedName.trim().isEmpty || assignedName.trim().toLowerCase() == 'staff') {
         if (inq.messages.any((m) => m.isStaff)) {
           assignedName = resolvedStaffName;
@@ -1145,9 +1117,7 @@ class InquiryController extends GetxController {
     await updateInquiryStatus(inquiryId, InquiryStatus.cancelled);
   }
 
-  // ===========================================================================
-  // CLOUD FIRESTORE SYNCHRONIZATION
-  // ===========================================================================
+  // Firestore sync
 
   Future<void> _syncInquiryToFirestore(TireInquiry inquiry) async {
     try {
@@ -1170,7 +1140,7 @@ class InquiryController extends GetxController {
       }
       final auth = Get.find<AuthController>();
 
-      // If user is guest/logged out: clear all inquiries so no user data remains on device!
+      // Guests have no orders; clear anything left from a previous user.
       if (auth.isGuest.value) {
         inquiries.clear();
         _clearLocalCache();
@@ -1180,10 +1150,10 @@ class InquiryController extends GetxController {
       Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('inquiries');
 
       if (auth.isStaff) {
-        // Staff listens to shop inquiries (capped at 100, sorted locally in Dart to prevent index omissions)
+        // Staff: all orders (max 100), sorted on the device so no composite index is needed.
         query = query.limit(100);
       } else {
-        // Customer ONLY queries their own inquiries from Firebase Firestore!
+        // Customer: only their own orders.
         final uid = auth.userId.value;
         final email = auth.userEmail.value;
         query = query.where('user_id', isEqualTo: uid.isNotEmpty ? uid : email);
@@ -1209,7 +1179,7 @@ class InquiryController extends GetxController {
     }
   }
 
-  /// Manually force-fetches the latest inquiries from Firestore
+  /// Fetches orders once (pull to refresh).
   Future<void> refreshInquiries() async {
     try {
       if (!Get.isRegistered<AuthController>()) return;
@@ -1254,11 +1224,9 @@ class InquiryController extends GetxController {
     }
   }
 
-  // ===========================================================================
-  // LOCAL CACHE & LOGOUT CLEAR
-  // ===========================================================================
+  // Local cache
 
-  /// Clears all inquiry state when a user signs out so no info is retained on the device
+  /// Clears orders on sign-out.
   Future<void> clearOnSignOut() async {
     _firestoreSubscription?.cancel();
     _firestoreSubscription = null;

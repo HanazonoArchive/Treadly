@@ -9,12 +9,8 @@ import '../models/inquiry.dart';
 import 'auth/sign_in_view.dart';
 import 'inquiry_chat_view.dart';
 
-/// Messenger View (Facebook Messenger style for Inquiries)
-/// Displays active inquiry conversations with search and filters:
-/// - Inquired
-/// - Responded
-/// - Completed
-/// Cancelled inquiries automatically disappear to keep chats clean and organized.
+/// Chats list: one conversation per order, with search and status filters.
+/// Cancelled orders are hidden.
 class InquiryMessengerView extends StatefulWidget {
   const InquiryMessengerView({super.key});
 
@@ -63,30 +59,29 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Messenger Top Bar Header: Back button + "Chats" title + Total count
+            // Header
             _buildMessengerHeader(context, inquiryCtrl, isStaff),
 
-            // Search Bar (Messenger style)
+            // Search
             _buildSearchBar(),
 
-            // Filter Chips Bar (All, Inquired, Responded, Completed) with Smart Unread Badges
+            // Filter chips with unread counts
             _buildFilterChips(inquiryCtrl, isStaff),
 
             const SizedBox(height: 6),
 
-            // Conversations List (Messenger Threads)
+            // Conversations
             Expanded(
               child: Obx(() {
                 final allInquiries = isStaff
                     ? inquiryCtrl.staffInquiries
                     : inquiryCtrl.customerInquiries;
 
-                // Rule: Cancelled inquiries automatically disappear from conversations
+                // Hide cancelled orders
                 final activeInquiries = allInquiries
                     .where((i) => i.status != InquiryStatus.cancelled)
                     .toList();
 
-                // Apply status filter
                 final filteredByStatus = activeInquiries.where((i) {
                   if (_selectedFilter == 'Inquired') {
                     return i.status == InquiryStatus.submitted;
@@ -100,7 +95,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                   return true; // 'All'
                 }).toList();
 
-                // Apply search filter (by inquiry ID, tire brand, tire model)
+                // Search by order id, brand or model
                 final list = filteredByStatus.where((i) {
                   if (_searchQuery.isEmpty) return true;
                   final q = _searchQuery.toLowerCase();
@@ -168,7 +163,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
             ),
           ),
           const Spacer(),
-          // Unread summary pill (reactive)
+          // Unread count
           Obx(() {
             final unread = isStaff
                 ? controller.unreadCustomerMessagesCount
@@ -370,7 +365,6 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
         : (unreadMsgs > 0 ? unreadMsgs : (isUnviewed ? 1 : 0));
     final latestMsg = item.latestMessage;
 
-    // Status colors and labels
     Color statusColor;
     String statusLabel;
     switch (item.status) {
@@ -396,7 +390,6 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
         break;
     }
 
-    // Snippet preview
     String previewText;
     if (latestMsg != null) {
       String staffName = item.assignedStaffName?.isNotEmpty == true
@@ -441,7 +434,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         child: Row(
           children: [
-            // Avatar with Status indicator dot (Messenger style)
+            // Avatar with status dot
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -463,7 +456,6 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                     ),
                   ),
                 ),
-                // Active status indicator pip
                 Positioned(
                   bottom: 1,
                   right: 1,
@@ -481,14 +473,13 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
             ),
             const SizedBox(width: 14),
 
-            // Content: Inquiry ID as Conversation Name, Status pill, Tire info, and Message Snippet
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      // Inquiry ID as Main Conversation Name
+                      // Order id
                       Expanded(
                         child: Row(
                           children: [
@@ -506,7 +497,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            // Status label pill (only for Responded or Completed; "Inquired" tag removed)
+                            // Status (only shown once confirmed)
                             if (item.status != InquiryStatus.submitted) ...[
                               const SizedBox(width: 8),
                               Container(
@@ -550,7 +541,7 @@ class _InquiryMessengerViewState extends State<InquiryMessengerView> {
                     ],
                   ),
                   const SizedBox(height: 3),
-                  // Product tag line (subtle context)
+                  // Product
                   Text(
                     '${item.tireBrand} ${item.tireModel} (${item.tireSize})',
                     style: const TextStyle(

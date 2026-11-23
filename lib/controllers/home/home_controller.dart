@@ -5,8 +5,7 @@ import 'package:get/get.dart';
 import '../../models/tire.dart';
 import '../../services/tire_repository.dart';
 
-/// HomeController: Pure showcase controller for Home Feed (Top 5 Bestsellers & Showcase Products).
-/// Located in `lib/controllers/home/home_controller.dart`.
+/// Home tab data: best sellers and product grid.
 class HomeController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxList<Tire> tires = <Tire>[].obs;
@@ -35,7 +34,7 @@ class HomeController extends GetxController {
       final loadedTires = await TireRepository.instance.fetchTires();
       tires.assignAll(loadedTires);
 
-      // Top 5 bestsellers sorted directly by database sales metrics (reviews_count with rating tie-breaker)
+      // Best sellers: most reviews first, rating breaks ties.
       final sortedBySales = List<Tire>.from(loadedTires)
         ..sort((a, b) {
           final comp = b.reviewsCount.compareTo(a.reviewsCount);
@@ -82,7 +81,7 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Updates tire in local reactive lists and persists changes to Firestore
+  /// Updates a tire on screen and in Firestore.
   Future<void> updateTire(Tire updatedTire) async {
     final idx = tires.indexWhere((t) => t.id == updatedTire.id);
     if (idx != -1) {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 import '../../views/inquiry_chat_view.dart';
 
-/// Top Brand Header: Bold, thick Treadly wordmark with Top Bar Message Button & Dynamic Badge
+/// Home header: Treadly wordmark and message icon.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
 

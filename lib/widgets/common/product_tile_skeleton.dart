@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
 
-/// Reusable Skeleton Shimmer Placeholder for ProductTile.
-/// Mimics the exact layout of ProductTile while loading or filtering.
+/// Loading placeholder with the same layout as ProductTile.
 class ProductTileSkeleton extends StatefulWidget {
   const ProductTileSkeleton({super.key});
 
-  /// Factory helper to build a grid of skeleton tiles
   static Widget grid({int count = 6}) {
     return GridView.builder(
       shrinkWrap: true,
@@ -68,7 +66,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Picture Placeholder
+              // Image
               Expanded(
                 child: Center(
                   child: Container(
@@ -83,7 +81,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
               ),
               const SizedBox(height: 10),
 
-              // 2. Brand Placeholder
+              // Brand
               Container(
                 width: 50,
                 height: 9,
@@ -94,7 +92,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
               ),
               const SizedBox(height: 6),
 
-              // 3. Title Placeholder (Single line matching ProductTile)
+              // Name
               Container(
                 width: double.infinity,
                 height: 14,
@@ -105,7 +103,7 @@ class _ProductTileSkeletonState extends State<ProductTileSkeleton>
               ),
               const SizedBox(height: 12),
 
-              // 4. Price Placeholder
+              // Price
               Container(
                 padding: const EdgeInsets.only(top: 6),
                 decoration: BoxDecoration(

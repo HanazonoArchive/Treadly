@@ -7,8 +7,7 @@ import '../core/app_theme.dart';
 import '../services/firebase_sync_service.dart';
 import 'auth_controller.dart';
 
-/// SettingsController manages profile editing, avatar uploads/presets,
-/// notification preferences, and account termination.
+/// Settings: display name, avatar and account deletion.
 class SettingsController extends GetxController {
   final AuthController auth = Get.find<AuthController>();
 
@@ -16,7 +15,7 @@ class SettingsController extends GetxController {
   final TextEditingController customAvatarController = TextEditingController();
   final RxBool isSavingName = false.obs;
 
-  // Curated high-res driver avatar presets
+  // Preset avatars
   static const List<String> avatarPresets = [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
@@ -33,7 +32,6 @@ class SettingsController extends GetxController {
     );
   }
 
-  /// Update Profile Display Name
   Future<void> updateName() async {
     if (auth.isGuest.value) {
       Get.toNamed('/sign-in');
@@ -100,7 +98,6 @@ class SettingsController extends GetxController {
     }
   }
 
-  /// Set Avatar from URL or Preset
   Future<void> setAvatar(String url) async {
     if (auth.isGuest.value) {
       Get.toNamed('/sign-in');
@@ -130,7 +127,7 @@ class SettingsController extends GetxController {
     );
   }
 
-  /// Confirm & Terminate Account
+  /// Asks for confirmation, then deletes the account.
   void promptAccountTermination() {
     if (auth.isGuest.value) {
       Get.snackbar(

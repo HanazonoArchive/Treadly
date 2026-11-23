@@ -27,7 +27,7 @@ Future<void> main() async {
     debugPrint('[Firebase] Initialization note: $e');
   }
 
-  // Pre-register core controllers
+  // Controllers used from the first frame
   Get.put(SyncController(), permanent: true);
   Get.put(AuthController(), permanent: true);
   Get.put(SearchCatalogController(), permanent: true);

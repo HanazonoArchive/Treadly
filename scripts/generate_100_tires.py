@@ -1,7 +1,4 @@
-"""
-Generate exactly 100 rich, distinct, real-world tire products for Treadly.
-Saves to assets/data/tires.json with full schema and expanded vehicle compatibility.
-"""
+"""Builds assets/data/tires.json: the tire catalog with specs and compatible vehicles."""
 
 import json
 import os
@@ -63,7 +60,7 @@ FITMENT_EXPANSION = {
     (325, 30, 21): ["Porsche 911 GT2 RS", "Porsche 911 GT3 RS", "Ferrari SF90 Stradale", "Mercedes-AMG GT Black Series", "McLaren 765LT", "Lamborghini Aventador SVJ"],
 }
 
-# Helper to build consistent tire dict
+# Builds one tire entry
 def make_tire(
     id_slug, brand, model, category, season,
     width, aspect_ratio, rim_size, load_index, speed_rating, dot_year,
@@ -80,7 +77,7 @@ def make_tire(
             seen.add(c_clean.lower())
             merged_cars.append(c_clean)
             
-    # Keep up to 10 top compatible vehicles
+    # At most 10 compatible vehicles
     merged_cars = merged_cars[:10]
 
     return {
@@ -111,9 +108,7 @@ def make_tire(
 
 TIRES = []
 
-# =============================================================================
-# 1. MICHELIN (18 Tires)
-# =============================================================================
+# Michelin
 TIRES.append(make_tire(
     "michelin-pilot-sport-5", "Michelin", "Pilot Sport 5",
     "Ultra High Performance Summer", "Summer",
@@ -313,9 +308,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 2. CONTINENTAL (18 Tires)
-# =============================================================================
+# Continental
 TIRES.append(make_tire(
     "continental-extreme-contact-dws06-plus", "Continental", "Extreme Contact DWS06 Plus",
     "Ultra High Performance All-Season", "All-Season",
@@ -515,9 +508,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 3. BRIDGESTONE (16 Tires)
-# =============================================================================
+# Bridgestone
 TIRES.append(make_tire(
     "bridgestone-potenza-sport", "Bridgestone", "Potenza Sport",
     "Ultra High Performance Summer", "Summer",
@@ -695,9 +686,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 4. PIRELLI (14 Tires)
-# =============================================================================
+# Pirelli
 TIRES.append(make_tire(
     "pirelli-p-zero-pz4", "Pirelli", "P Zero PZ4",
     "Max Performance Summer", "Summer",
@@ -853,9 +842,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 5. GOODYEAR (12 Tires)
-# =============================================================================
+# Goodyear
 TIRES.append(make_tire(
     "goodyear-eagle-f1-asymmetric-6", "Goodyear", "Eagle F1 Asymmetric 6",
     "Ultra High Performance Summer", "Summer",
@@ -989,9 +976,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 6. YOKOHAMA (12 Tires)
-# =============================================================================
+# Yokohama
 TIRES.append(make_tire(
     "yokohama-advan-sport-v107", "Yokohama", "Advan Sport V107",
     "Ultra High Performance Summer", "Summer",
@@ -1125,9 +1110,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 7. DUNLOP & TOYO (12 Tires)
-# =============================================================================
+# Dunlop & Toyo
 TIRES.append(make_tire(
     "dunlop-direzza-ziii", "Dunlop", "Direzza ZIII",
     "Street-Legal Track & Competition", "Summer Track",
@@ -1261,9 +1244,7 @@ TIRES.append(make_tire(
 ))
 
 
-# =============================================================================
-# 8. HANKOOK, KUMHO, FALKEN, BFGOODRICH (10 Tires)
-# =============================================================================
+# Hankook, Kumho, Falken, BFGoodrich
 TIRES.append(make_tire(
     "hankook-ventus-s1-evo3", "Hankook", "Ventus S1 evo3",
     "Ultra High Performance Summer", "Summer",

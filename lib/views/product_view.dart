@@ -10,8 +10,7 @@ import '../models/tire.dart';
 import '../services/navigation_service.dart';
 import 'auth/sign_in_view.dart';
 
-/// Product Details View: Simple, clean, usable showcase page for a single tire.
-/// Features Real-time Nearest Shop Availability & Inquire / Reserve action.
+/// Product details: specs, compatible vehicles, Single/Set of 4 and ordering.
 class ProductView extends StatefulWidget {
   final Tire? tire;
   final bool initialSetOfFour;
@@ -34,13 +33,12 @@ class _ProductViewState extends State<ProductView> {
   @override
   void initState() {
     super.initState();
-    // Resolve tire from widget or Get.arguments
+    // Tire comes from the constructor or Get.arguments
     if (widget.tire != null) {
       _tire = widget.tire!;
     } else if (Get.arguments is Tire) {
       _tire = Get.arguments as Tire;
     } else {
-      // Fallback default tire
       _tire = const Tire(
         id: 'michelin-pilot-sport-5',
         brand: 'Michelin',
@@ -98,7 +96,7 @@ class _ProductViewState extends State<ProductView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Tire Stage & Hero Image
+            // Image
             Container(
               width: double.infinity,
               height: 260,
@@ -139,13 +137,12 @@ class _ProductViewState extends State<ProductView> {
               ),
             ),
 
-            // 2. Product Information
+            // Details
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Badges row
                   Row(
                     children: [
                       Text(
@@ -173,7 +170,6 @@ class _ProductViewState extends State<ProductView> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Brand & Model Name
                   Text(
                     _tire.brand.toUpperCase(),
                     style: const TextStyle(
@@ -196,7 +192,6 @@ class _ProductViewState extends State<ProductView> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Price
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
@@ -232,7 +227,7 @@ class _ProductViewState extends State<ProductView> {
                   ),
                   const SizedBox(height: 18),
 
-                  // Set Bundle Selector Toggle
+                  // Single / Set of 4
                   Container(
                     decoration: BoxDecoration(
                       color: AppTheme.surfaceDark,
@@ -328,7 +323,7 @@ class _ProductViewState extends State<ProductView> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Technical Specifications Grid
+                  // Specifications
                   const Text(
                     'Specifications',
                     style: TextStyle(
@@ -358,7 +353,6 @@ class _ProductViewState extends State<ProductView> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Description
                   if (_tire.description != null && _tire.description!.isNotEmpty) ...[
                     const Text(
                       'Overview',
@@ -381,7 +375,6 @@ class _ProductViewState extends State<ProductView> {
                     const SizedBox(height: 24),
                   ],
 
-                  // Compatible Vehicles
                   if (_tire.compatibleCars != null && _tire.compatibleCars!.isNotEmpty) ...[
                     const Text(
                       'Compatible Vehicles',
@@ -428,7 +421,7 @@ class _ProductViewState extends State<ProductView> {
         child: SafeArea(
           child: Row(
             children: [
-              // Quantity Counter
+              // Quantity
               Container(
                 decoration: BoxDecoration(
                   color: AppTheme.surfaceDark,
@@ -461,7 +454,7 @@ class _ProductViewState extends State<ProductView> {
               ),
               const SizedBox(width: 14),
 
-              // Inquire Button
+              // Order button
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -516,7 +509,6 @@ class _ProductViewState extends State<ProductView> {
 
     final notesController = TextEditingController();
 
-    // Price calculations for the breakdown
     final int tireCount = _isSetOfFour ? _quantity * 4 : _quantity;
     final quote = TirePriceQuote.compute(
       unitListPrice: _tire.priceInPhp,
@@ -554,7 +546,6 @@ class _ProductViewState extends State<ProductView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Drag Handle
                 Center(
                   child: Container(
                     width: 42,
@@ -567,7 +558,7 @@ class _ProductViewState extends State<ProductView> {
                 ),
                 const SizedBox(height: 16),
 
-                // Expanded Tire Details (gives full room for the tire name and specs)
+                // Tire summary
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -631,7 +622,7 @@ class _ProductViewState extends State<ProductView> {
                 ),
                 const SizedBox(height: 16),
 
-                // Price Breakdown Container (placed underneath tire details)
+                // Price breakdown
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -741,7 +732,7 @@ class _ProductViewState extends State<ProductView> {
                 ),
                 const SizedBox(height: 16),
 
-                // Note Field (Replaced 'Special Request (Optional)')
+                // Note for the shop
                 const Text(
                   'Note',
                   style: TextStyle(
@@ -777,7 +768,7 @@ class _ProductViewState extends State<ProductView> {
                 ),
                 const SizedBox(height: 20),
 
-                // Simple Submit Button (No icon)
+                // Confirm Order
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

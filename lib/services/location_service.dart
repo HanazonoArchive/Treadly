@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-// Conditional import: dart:html on web, stub on mobile/desktop
+// Web uses dart:html; other platforms use the stub.
 import 'location_service_stub.dart'
     if (dart.library.html) 'location_service_web.dart' as platform_loc;
 
@@ -25,7 +25,7 @@ class LocationService {
     }
   }
 
-  /// Haversine formula to compute distance in km between two lat/lon points
+  /// Distance in km (haversine).
   static double calculateDistanceKm({
     required double lat1,
     required double lon1,

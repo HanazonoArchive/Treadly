@@ -8,10 +8,9 @@ import '../core/app_theme.dart';
 import '../models/inquiry.dart';
 import 'inquiry_messenger_view.dart';
 
-/// Inquiry Conversation / Chat View
-/// Allows real-time customer and staff communication tied directly to an Inquiry ID.
-/// Staff sending a message automatically advances the status from 'submitted' to 'responded'.
-/// Staff can also mark the inquiry as completed or reopen it.
+/// Chat screen for one order.
+/// A staff reply moves a Placed order to Confirmed; staff can also mark it
+/// Installed or reopen it.
 class InquiryChatView extends StatefulWidget {
   final String inquiryId;
 
@@ -20,7 +19,7 @@ class InquiryChatView extends StatefulWidget {
     required this.inquiryId,
   });
 
-  /// Universal entry point for top bar message icon button -> opens Facebook Messenger-style Chats page
+  /// Opens the Chats list (used by the message icon in the top bars).
   static void openConversations(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -46,7 +45,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     super.initState();
     _markRead();
     _scrollCtrl.addListener(_onScrollChanged);
-    // Multi-pass initial auto-scroll to bottom so conversation immediately opens at the latest chat
+    // Scroll to the newest message once the list has laid out.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom(immediate: true);
       Future.delayed(const Duration(milliseconds: 100), () => _scrollToBottom(immediate: true));
@@ -156,7 +155,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             );
           }
 
-          // Staff segregation guard: If this inquiry was replied to/claimed by another staff member
+          // Block staff from opening an order claimed by someone else.
           if (isStaff) {
             final auth = Get.isRegistered<AuthController>() ? Get.find<AuthController>() : null;
             final currentStaffId = auth?.userId.value.isNotEmpty == true ? auth!.userId.value : (auth?.userEmail.value ?? '');
@@ -228,12 +227,12 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             }
           }
 
-          // Automatically mark read if viewing active stream
+          // Mark messages read while the chat is open
           _markRead();
 
           final messages = inq.effectiveMessages;
 
-          // Auto-scroll to bottom when messages load or change
+          // Keep the newest message in view
           if (messages.length != _lastMessageCount) {
             final isFirst = !_hasInitialScrolled;
             _lastMessageCount = messages.length;
@@ -247,13 +246,13 @@ class _InquiryChatViewState extends State<InquiryChatView> {
             children: [
               Column(
                 children: [
-                  // Top Chat Header Bar: Only Inquiry ID as title (no tags, no shop location)
+                  // Header
                   _buildTopBar(context, inq, inquiryCtrl, isStaff),
 
-                  // Product Info Tag (Kept directly below header)
+                  // Product tag
                   _buildProductSummaryCard(inq),
 
-                  // Chat Messages Area
+                  // Messages
                   Expanded(
                     child: messages.isEmpty
                         ? _buildEmptyChatState(inq, isStaff)
@@ -269,11 +268,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                           ),
                   ),
 
-                  // Bottom Message Input Bar
+                  // Input bar
                   _buildMessageInputBar(inquiryCtrl, inq),
                 ],
               ),
-              // Floating Scroll-To-Bottom shortcut button (visible when scrolled up)
+              // Scroll-to-bottom button
               if (_showScrollToBottomButton)
                 Positioned(
                   right: 16,
@@ -343,7 +342,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               ),
             ),
           ),
-          // Staff Action: Check icon button representing Completed with confirmation modal
+          // Staff: mark as installed
           if (isStaff && inq.status != InquiryStatus.cancelled) ...[
             IconButton(
               tooltip: inq.status == InquiryStatus.completed ? 'Order Completed' : 'Complete Order',
@@ -361,7 +360,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               },
             ),
           ],
-          // Toggle Product Tag Details Button
+          // Order details toggle
           IconButton(
             tooltip: 'Product Details',
             icon: Icon(
@@ -382,7 +381,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
 
   Widget _buildProductSummaryCard(TireInquiry inq) {
     if (!_isProductDetailsExpanded) {
-      // Compact one-line product tag
       return Container(
         color: AppTheme.surfaceDark,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -545,7 +543,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sender badge (especially visible for official staff)
+                  // Sender name
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -580,7 +578,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                   const SizedBox(height: 5),
 
-                  // Message Text
                   Text(
                     msg.text,
                     style: const TextStyle(
@@ -591,7 +588,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                   ),
                   const SizedBox(height: 4),
 
-                  // Timestamp
                   Align(
                     alignment: Alignment.bottomRight,
                     child: Text(
@@ -616,17 +612,17 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       return msg.senderName.isNotEmpty ? msg.senderName : inq.customerName;
     }
 
-    // Clean any legacy '(Staff)' suffix if present in stored message
+    // Old messages may end with ' (Staff)'
     String clean = msg.senderName.replaceAll(RegExp(r'\s*\(Staff\)', caseSensitive: false), '').trim();
 
-    // 1. If assignedStaffName on inquiry is set to a specific name (and not generic 'staff'), use it
+    // Prefer the order's assigned staff name
     if (inq.assignedStaffName != null &&
         inq.assignedStaffName!.trim().isNotEmpty &&
         inq.assignedStaffName!.trim().toLowerCase() != 'staff') {
       return inq.assignedStaffName!.trim();
     }
 
-    // 2. If the message senderName itself is a specific name (not 'staff' or 'guest')
+    // then the name stored on the message
     if (clean.isNotEmpty &&
         clean.toLowerCase() != 'staff' &&
         clean.toLowerCase() != 'guest' &&
@@ -634,7 +630,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       return clean;
     }
 
-    // 3. Check InquiryController staff directory and active staff display name
+    // then the staff directory
     if (Get.isRegistered<InquiryController>()) {
       final inqCtrl = Get.find<InquiryController>();
       if (msg.senderId.isNotEmpty && inqCtrl.staffNames.containsKey(msg.senderId)) {
@@ -651,7 +647,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       }
     }
 
-    // 4. Check if current authenticated user is staff with a name set
+    // then the signed-in staff member
     if (Get.isRegistered<AuthController>()) {
       final auth = Get.find<AuthController>();
       if (auth.isStaff &&
@@ -662,12 +658,11 @@ class _InquiryChatViewState extends State<InquiryChatView> {
       }
     }
 
-    // 5. Fallback: staff account was named 'jhon'
+    // Last resort for old test data
     return 'jhon';
   }
 
-  /// Modal confirmation dialog to prevent accidental completion of inquiry
-  /// Modal confirmation dialog to prevent accidental completion of inquiry
+  /// Confirms before marking an order as installed.
   void _showCompleteConfirmation(
     BuildContext context,
     TireInquiry inq,
@@ -708,7 +703,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
               const SizedBox(height: 22),
               Row(
                 children: [
-                  // Cancel button: Clean text button with NO border
                   Expanded(
                     child: TextButton(
                       style: TextButton.styleFrom(
@@ -729,7 +723,6 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Confirm button: Solid vibrant green, bold text, less rounder (10px radius)
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -763,7 +756,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
     );
   }
 
-  /// Modal confirmation dialog for reopening completed orders
+  /// Confirms before reopening an installed order.
   void _showReopenConfirmation(
     BuildContext context,
     TireInquiry inq,
@@ -928,7 +921,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
   }
 }
 
-/// Dedicated Top Bar Message Button with Dynamic Badge
+/// Message icon with unread badge, used in the top bars.
 class TopBarMessageButton extends StatelessWidget {
   final VoidCallback? onPressed;
 

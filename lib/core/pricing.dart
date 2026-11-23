@@ -1,8 +1,6 @@
-/// Single source of truth for Treadly order pricing.
-///
-/// Every screen (order sheet, order card, chat summary, analytics) must use
-/// this class so the subtotal, discount, fee and total always agree.
-/// All amounts are rounded to whole pesos before they are combined.
+/// Order pricing used by every screen (order sheet, order card, chat,
+/// analytics), so the amounts always match. Amounts are rounded to whole
+/// pesos before they are added up.
 class TirePriceQuote {
   static const double platformServiceFee = 150.0;
   static const double setOfFourDiscountRate = 0.10;

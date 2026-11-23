@@ -92,7 +92,7 @@ class ShopBranch {
     );
   }
 
-  /// The single flagship store entity for Treadly Single-Business model
+  /// The one shop the app currently serves.
   static const ShopBranch flagship = ShopBranch(
     id: 'treadly-flagship',
     name: 'Treadly Auto & Tire Center',
