@@ -44,7 +44,7 @@ void main() {
     late SearchCatalogController search;
     setUp(() {
       search = SearchCatalogController();
-      search.allTires.assignAll(loadCatalog());
+      search.allTires.addAll(loadCatalog());
     });
 
     test('SUV & 4x4 only returns SUV, terrain or truck tires (WB-12)', () {
