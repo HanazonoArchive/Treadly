@@ -27,23 +27,15 @@ class InquiryController extends GetxController {
 
   // Analytics
 
-  /// Revenue from completed orders (falls back to all non-cancelled orders).
-  double get totalRevenue {
-    final completed = inquiries.where((inq) => inq.status == InquiryStatus.completed);
-    if (completed.isNotEmpty) {
-      return completed.fold(0.0, (acc, inq) => acc + inq.totalPrice);
-    }
-    return inquiries
-        .where((inq) => inq.status != InquiryStatus.cancelled)
-        .fold(0.0, (acc, inq) => acc + inq.totalPrice);
-  }
+  /// Revenue from installed orders.
+  double get totalRevenue => inquiries
+      .where((inq) => inq.status == InquiryStatus.completed)
+      .fold(0.0, (acc, inq) => acc + inq.totalPrice);
 
-  /// Number of tires installed or ordered.
-  int get totalUnitsFitted {
-    return inquiries
-        .where((inq) => inq.status != InquiryStatus.cancelled)
-        .fold(0, (acc, inq) => acc + inq.totalTiresCount);
-  }
+  /// Number of tires installed.
+  int get totalUnitsFitted => inquiries
+      .where((inq) => inq.status == InquiryStatus.completed)
+      .fold(0, (acc, inq) => acc + inq.totalTiresCount);
 
   int get completedOrdersCount =>
       inquiries.where((inq) => inq.status == InquiryStatus.completed).length;
@@ -56,11 +48,11 @@ class InquiryController extends GetxController {
   int get bayReadyCount =>
       inquiries.where((inq) => inq.status == InquiryStatus.responded).length;
 
-  /// Average order value.
+  /// Average value of an installed order.
   double get averageOrderValue {
-    final valid = inquiries.where((inq) => inq.status != InquiryStatus.cancelled).toList();
-    if (valid.isEmpty) return 0.0;
-    return totalRevenue / valid.length;
+    final installed = completedOrdersCount;
+    if (installed == 0) return 0.0;
+    return totalRevenue / installed;
   }
 
   /// Share of orders that are Set of 4.
@@ -75,36 +67,35 @@ class InquiryController extends GetxController {
   List<Map<String, dynamic>> get topSellingTiresAnalytics =>
       getTopSellingTiresWithSort(sortBy: 'units', timeframe: 'All Time').take(5).toList();
 
-  List<TireInquiry> getInquiriesForTimeframe(String timeframe) {
+  List<TireInquiry> getInquiriesForTimeframe(String timeframe) => inquiries
+      .where((i) => i.status != InquiryStatus.cancelled && _isInTimeframe(i.createdAt, timeframe))
+      .toList();
+
+  /// getInquiriesForTimeframe leaves cancelled orders out, so they are counted here.
+  int getTimeframeCancelledCount(String timeframe) => inquiries
+      .where((i) => i.status == InquiryStatus.cancelled && _isInTimeframe(i.createdAt, timeframe))
+      .length;
+
+  bool _isInTimeframe(DateTime time, String timeframe) {
     final now = DateTime.now();
-    final valid = inquiries.where((i) => i.status != InquiryStatus.cancelled).toList();
     if (timeframe == 'Today') {
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      return valid.where((i) => i.createdAt.isAfter(startOfDay)).toList();
+      return time.isAfter(DateTime(now.year, now.month, now.day));
     } else if (timeframe == 'This Week') {
       final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-      final startDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
-      return valid.where((i) => i.createdAt.isAfter(startDay)).toList();
+      return time.isAfter(DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day));
     } else if (timeframe == 'This Month') {
-      final startOfMonth = DateTime(now.year, now.month, 1);
-      return valid.where((i) => i.createdAt.isAfter(startOfMonth)).toList();
+      return time.isAfter(DateTime(now.year, now.month, 1));
     }
-    return valid;
+    return true;
   }
 
-  double getTimeframeRevenue(String timeframe) {
-    final inqs = getInquiriesForTimeframe(timeframe);
-    final completed = inqs.where((inq) => inq.status == InquiryStatus.completed);
-    if (completed.isNotEmpty) {
-      return completed.fold(0.0, (acc, inq) => acc + inq.totalPrice);
-    }
-    return inqs.fold(0.0, (acc, inq) => acc + inq.totalPrice);
-  }
+  double getTimeframeRevenue(String timeframe) => getInquiriesForTimeframe(timeframe)
+      .where((inq) => inq.status == InquiryStatus.completed)
+      .fold(0.0, (acc, inq) => acc + inq.totalPrice);
 
-  int getTimeframeUnitsFitted(String timeframe) {
-    return getInquiriesForTimeframe(timeframe)
-        .fold(0, (acc, inq) => acc + inq.totalTiresCount);
-  }
+  int getTimeframeUnitsFitted(String timeframe) => getInquiriesForTimeframe(timeframe)
+      .where((inq) => inq.status == InquiryStatus.completed)
+      .fold(0, (acc, inq) => acc + inq.totalTiresCount);
 
   int getTimeframeCompletedCount(String timeframe) {
     return getInquiriesForTimeframe(timeframe)
@@ -113,9 +104,9 @@ class InquiryController extends GetxController {
   }
 
   double getTimeframeAov(String timeframe) {
-    final inqs = getInquiriesForTimeframe(timeframe);
-    if (inqs.isEmpty) return 0.0;
-    return getTimeframeRevenue(timeframe) / inqs.length;
+    final installed = getTimeframeCompletedCount(timeframe);
+    if (installed == 0) return 0.0;
+    return getTimeframeRevenue(timeframe) / installed;
   }
 
   /// Conversion rate: completed / total non-cancelled orders
@@ -202,7 +193,7 @@ class InquiryController extends GetxController {
     buffer.writeln('• Gross Revenue: ₱${getTimeframeRevenue(timeframe).toStringAsFixed(0)}');
     buffer.writeln('• Completed Bay Fittings: ${getTimeframeCompletedCount(timeframe)} orders');
     buffer.writeln('• Total Tires Fitted: ${getTimeframeUnitsFitted(timeframe)} units');
-    buffer.writeln('• In Bay Preparation: ${pendingPrepsCount + bayReadyCount} orders');
+    buffer.writeln('• Open Orders: ${pendingPrepsCount + bayReadyCount}');
     buffer.writeln('• Average Order Ticket: ₱${getTimeframeAov(timeframe).toStringAsFixed(0)}');
     buffer.writeln('• Conversion Rate: ${conversionRate.toStringAsFixed(1)}%');
     buffer.writeln('----------------------------------------');

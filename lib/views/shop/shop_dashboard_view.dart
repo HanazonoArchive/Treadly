@@ -1058,7 +1058,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '$_analyticsTimeframe completed bay installations & scheduled orders',
+                    'From installed orders',
                     style: const TextStyle(
                       color: Color(0xFF64748B),
                       fontSize: 12,
@@ -1073,9 +1073,9 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
               children: [
                 Expanded(
                   child: _buildSimpleMetricCard(
-                    label: 'Completed Orders',
+                    label: 'Installed Orders',
                     value: '$timeframeCompleted',
-                    color: AppTheme.statusCompleted,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1093,10 +1093,10 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
               children: [
                 Expanded(
                   child: _buildSimpleMetricCard(
-                    label: 'In Bay Preparation',
+                    label: 'Open Orders',
                     value:
                         '${inquiryCtrl.pendingPrepsCount + inquiryCtrl.bayReadyCount}',
-                    color: AppTheme.accentOrange,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1104,7 +1104,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                   child: _buildSimpleMetricCard(
                     label: 'Avg. Order Ticket',
                     value: '₱${_formatAmount(timeframeAov)}',
-                    color: const Color(0xFF38BDF8),
+                    color: AppTheme.textPrimary,
                   ),
                 ),
               ],
@@ -1145,7 +1145,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                       Text(
                         '${inquiryCtrl.conversionRate.toStringAsFixed(1)}%',
                         style: const TextStyle(
-                          color: AppTheme.statusCompleted,
+                          color: AppTheme.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           fontFamily: 'Outfit',
@@ -1161,28 +1161,26 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                         timeframeInqs
                             .where((i) => i.status == InquiryStatus.submitted)
                             .length,
-                        AppTheme.accentOrange,
+                        const Color(0xFF2563EB),
                       ),
                       _buildPipelineStageItem(
                         'Confirmed',
                         timeframeInqs
                             .where((i) => i.status == InquiryStatus.responded)
                             .length,
-                        AppTheme.statusResponded,
+                        const Color(0xFF7C3AED),
                       ),
                       _buildPipelineStageItem(
                         'Installed',
                         timeframeInqs
                             .where((i) => i.status == InquiryStatus.completed)
                             .length,
-                        AppTheme.statusCompleted,
+                        const Color(0xFF059669),
                       ),
                       _buildPipelineStageItem(
                         'Cancelled',
-                        timeframeInqs
-                            .where((i) => i.status == InquiryStatus.cancelled)
-                            .length,
-                        const Color(0xFF64748B),
+                        inquiryCtrl.getTimeframeCancelledCount(_analyticsTimeframe),
+                        AppTheme.statusCancelled,
                       ),
                     ],
                   ),
@@ -1224,7 +1222,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                           ),
                           Expanded(
                             flex: singlePct,
-                            child: Container(color: const Color(0xFF38BDF8)),
+                            child: Container(color: const Color(0xFFCBD5E1)),
                           ),
                         ],
                       ),
@@ -1261,7 +1259,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF38BDF8),
+                              color: Color(0xFFCBD5E1),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -1531,7 +1529,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(
                     LucideIcons.fileText,
-                    color: Color(0xFF38BDF8),
+                    color: AppTheme.textSecondary,
                   ),
                   title: const Text(
                     'Copy Executive Summary',
