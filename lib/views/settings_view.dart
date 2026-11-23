@@ -242,6 +242,20 @@ class SettingsView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: Obx(
+                () => OutlinedButton.icon(
+                  onPressed: controller.isUploadingAvatar.value ? null : controller.uploadAvatar,
+                  style: OutlinedButton.styleFrom(foregroundColor: AppTheme.accentOrange),
+                  icon: controller.isUploadingAvatar.value
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.upload, size: 18),
+                  label: Text(controller.isUploadingAvatar.value ? 'Uploading...' : 'Upload Photo'),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             const Text(
               'Preset Driver Avatars',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),

@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../core/app_theme.dart';
 import '../services/firebase_sync_service.dart';
@@ -15,6 +17,10 @@ class SettingsController extends GetxController {
   late final TextEditingController nameInputController;
   final TextEditingController customAvatarController = TextEditingController();
   final RxBool isSavingName = false.obs;
+  final RxBool isUploadingAvatar = false.obs;
+
+  // Unsigned upload preset; uploads go to the treadly/avatars folder.
+  final CloudinaryPublic _cloudinary = CloudinaryPublic('pcfavaxs', 'cce106', cache: false);
 
   // Preset avatars
   static const List<String> avatarPresets = [
@@ -85,6 +91,43 @@ class SettingsController extends GetxController {
 
     Get.back(); // Close avatar sheet if open
     showToast('Your profile picture has been updated.');
+  }
+
+  /// Picks a photo from the gallery, uploads it to Cloudinary and uses it as
+  /// the profile picture.
+  Future<void> uploadAvatar() async {
+    if (auth.isGuest.value) {
+      Get.toNamed('/sign-in');
+      return;
+    }
+
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    isUploadingAvatar.value = true;
+    try {
+      final bytes = await picked.readAsBytes();
+      final response = await _cloudinary.uploadFile(
+        CloudinaryFile.fromBytesData(
+          bytes,
+          identifier: picked.name.isNotEmpty ? picked.name : 'avatar.jpg',
+          folder: 'treadly/avatars',
+          resourceType: CloudinaryResourceType.Image,
+        ),
+      );
+      await setAvatar(response.secureUrl);
+    } on CloudinaryException catch (e) {
+      showToast('Upload failed: ${e.message ?? 'please try again.'}');
+    } catch (_) {
+      showToast('Upload failed. Please try again.');
+    } finally {
+      isUploadingAvatar.value = false;
+    }
   }
 
   /// Asks for confirmation, then deletes the account.
