@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,9 +47,30 @@ class AuthController extends GetxController {
           avatar: savedAvatar ?? '',
           persist: false,
         );
+        await _verifyRestoredSession(savedEmail ?? '');
       }
     } catch (e) {
       debugPrint('[AuthController] SharedPreferences restore note: $e');
+    }
+  }
+
+  /// A cached session is only trusted if Firebase Authentication still has a
+  /// signed-in user with the same email. Otherwise (signed out elsewhere,
+  /// account deleted, or edited local storage) the app falls back to Guest.
+  Future<void> _verifyRestoredSession(String savedEmail) async {
+    try {
+      final user = await fb.FirebaseAuth.instance
+          .authStateChanges()
+          .first
+          .timeout(const Duration(seconds: 8));
+      final authEmail = user?.email?.trim().toLowerCase() ?? '';
+      if (user == null || authEmail != savedEmail.trim().toLowerCase()) {
+        await signOut(silent: true);
+      }
+    } on TimeoutException {
+      // Auth state not known yet (slow start); keep the cached session.
+    } catch (e) {
+      debugPrint('[AuthController] Session verification note: $e');
     }
   }
 
@@ -138,155 +162,174 @@ class AuthController extends GetxController {
     } catch (_) {}
   }
 
-  /// Sign In with Email & Password
+  /// Sign In with Email & Password.
+  /// The password is verified by Firebase Authentication; the Firestore
+  /// `users` document only stores the profile (name, avatar, user_id).
   Future<bool> signIn({required String email, required String password}) async {
     isLoading.value = true;
     final cleanEmail = email.trim().toLowerCase();
 
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: cleanEmail)
-          .limit(1)
-          .get();
-
-      if (snap.docs.isNotEmpty) {
-        final doc = snap.docs.first;
-        final data = doc.data();
-        final uid = data['user_id'] as String? ?? doc.id;
-        final name = data['name'] as String? ?? cleanEmail.split('@').first;
-        final avatar = data['avatar_url'] as String? ?? '';
-
-        _setAuthenticatedUserDirect(
-          newUserId: uid,
-          email: cleanEmail,
-          name: name,
-          avatar: avatar,
-        );
-
-        if (cleanEmail.endsWith('@treadly.com') && name.isNotEmpty && name.toLowerCase() != 'staff') {
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('latest_staff_name', name);
-          } catch (_) {}
-          if (Get.isRegistered<InquiryController>()) {
-            Get.find<InquiryController>().activeStaffDisplayName.value = name;
-          }
-        }
-
-        isLoading.value = false;
-        Get.snackbar(
-          'Welcome Back',
-          'Signed in as ${displayName.value}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppTheme.surfaceDark,
-          colorText: AppTheme.textPrimary,
-          borderColor: AppTheme.borderDark,
-          borderWidth: 1,
-          margin: const EdgeInsets.all(16),
-        );
-        return true;
-      } else {
-        // First-time automatic setup for this email in Firestore
-        final newUid = 'usr-${DateTime.now().millisecondsSinceEpoch}';
-        final name = cleanEmail.split('@').first;
-        await FirebaseFirestore.instance.collection('users').doc(newUid).set({
-          'user_id': newUid,
-          'email': cleanEmail,
-          'name': name,
-          'avatar_url': '',
-          'created_at': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-
-        _setAuthenticatedUserDirect(
-          newUserId: newUid,
-          email: cleanEmail,
-          name: name,
-          avatar: '',
-        );
-
-        isLoading.value = false;
-        Get.snackbar(
-          'Welcome to Treadly',
-          'Account created for $name',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppTheme.surfaceDark,
-          colorText: AppTheme.textPrimary,
-          borderColor: AppTheme.borderDark,
-          borderWidth: 1,
-          margin: const EdgeInsets.all(16),
-        );
-        return true;
-      }
-    } catch (e) {
-      debugPrint('[AuthController] Firestore sign-in note: $e');
-      // Offline fallback: allow login with deterministic ID
-      final fallbackUid = 'usr-${cleanEmail.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
-      final name = cleanEmail.split('@').first;
-      _setAuthenticatedUserDirect(
-        newUserId: fallbackUid,
+      final credential = await fb.FirebaseAuth.instance.signInWithEmailAndPassword(
         email: cleanEmail,
-        name: name,
-        avatar: '',
+        password: password,
       );
+      final profile = await _loadOrCreateProfile(cleanEmail, credential.user!.uid);
+
+      _setAuthenticatedUserDirect(
+        newUserId: profile.uid,
+        email: cleanEmail,
+        name: profile.name,
+        avatar: profile.avatar,
+      );
+
+      if (isStaff && profile.name.isNotEmpty && profile.name.toLowerCase() != 'staff') {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('latest_staff_name', profile.name);
+        } catch (_) {}
+        if (Get.isRegistered<InquiryController>()) {
+          Get.find<InquiryController>().activeStaffDisplayName.value = profile.name;
+        }
+      }
+
       isLoading.value = false;
+      _showAuthSnackbar('Welcome Back', 'Signed in as ${displayName.value}');
       return true;
+    } on fb.FirebaseAuthException catch (e) {
+      isLoading.value = false;
+      _showAuthSnackbar('Sign In Failed', _authErrorMessage(e.code), isError: true);
+      return false;
+    } catch (e) {
+      debugPrint('[AuthController] Sign-in error: $e');
+      isLoading.value = false;
+      _showAuthSnackbar('Sign In Failed', 'Could not reach the server. Check your connection and try again.', isError: true);
+      return false;
     }
   }
 
-  /// Sign Up with Email & Password
+  /// Sign Up with Email & Password.
+  /// Firebase Authentication rejects emails that are already registered.
+  /// Staff (@treadly.com) accounts cannot self-register; the shop
+  /// administrator creates them in the Firebase console.
   Future<bool> signUp({required String email, required String password}) async {
-    isLoading.value = true;
     final cleanEmail = email.trim().toLowerCase();
 
-    try {
-      final newUid = 'usr-${DateTime.now().millisecondsSinceEpoch}';
-      final name = cleanEmail.split('@').first;
-
-      await FirebaseFirestore.instance.collection('users').doc(newUid).set({
-        'user_id': newUid,
-        'email': cleanEmail,
-        'name': name,
-        'avatar_url': '',
-        'created_at': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
-      _setAuthenticatedUserDirect(
-        newUserId: newUid,
-        email: cleanEmail,
-        name: name,
-        avatar: '',
+    if (cleanEmail.endsWith('@treadly.com')) {
+      _showAuthSnackbar(
+        'Staff Account',
+        'Staff accounts are created by the shop administrator. Please sign in instead.',
+        isError: true,
       );
-
-      isLoading.value = false;
-      Get.snackbar(
-        'Account Created',
-        'Welcome to Treadly, ${displayName.value}!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.textPrimary,
-        borderColor: AppTheme.borderDark,
-        borderWidth: 1,
-        margin: const EdgeInsets.all(16),
-      );
-      return true;
-    } catch (e) {
-      debugPrint('[AuthController] Firestore sign-up note: $e');
-      final fallbackUid = 'usr-${cleanEmail.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
-      final name = cleanEmail.split('@').first;
-      _setAuthenticatedUserDirect(
-        newUserId: fallbackUid,
-        email: cleanEmail,
-        name: name,
-        avatar: '',
-      );
-      isLoading.value = false;
-      return true;
+      return false;
     }
+
+    isLoading.value = true;
+    try {
+      final credential = await fb.FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: cleanEmail,
+        password: password,
+      );
+      final profile = await _loadOrCreateProfile(cleanEmail, credential.user!.uid);
+
+      _setAuthenticatedUserDirect(
+        newUserId: profile.uid,
+        email: cleanEmail,
+        name: profile.name,
+        avatar: profile.avatar,
+      );
+
+      isLoading.value = false;
+      _showAuthSnackbar('Account Created', 'Welcome to Treadly, ${displayName.value}!');
+      return true;
+    } on fb.FirebaseAuthException catch (e) {
+      isLoading.value = false;
+      _showAuthSnackbar('Sign Up Failed', _authErrorMessage(e.code), isError: true);
+      return false;
+    } catch (e) {
+      debugPrint('[AuthController] Sign-up error: $e');
+      isLoading.value = false;
+      _showAuthSnackbar('Sign Up Failed', 'Could not reach the server. Check your connection and try again.', isError: true);
+      return false;
+    }
+  }
+
+  /// Finds the Firestore profile for this email (keeping the user_id of
+  /// accounts created before Firebase Authentication was added, so their
+  /// existing orders stay linked) or creates one keyed by the Auth UID.
+  Future<({String uid, String name, String avatar})> _loadOrCreateProfile(
+    String cleanEmail,
+    String authUid,
+  ) async {
+    final users = FirebaseFirestore.instance.collection('users');
+    final snap = await users.where('email', isEqualTo: cleanEmail).limit(1).get();
+
+    if (snap.docs.isNotEmpty) {
+      final doc = snap.docs.first;
+      final data = doc.data();
+      await doc.reference.set({'auth_uid': authUid}, SetOptions(merge: true));
+      return (
+        uid: data['user_id'] as String? ?? doc.id,
+        name: data['name'] as String? ?? cleanEmail.split('@').first,
+        avatar: data['avatar_url'] as String? ?? '',
+      );
+    }
+
+    final name = cleanEmail.split('@').first;
+    await users.doc(authUid).set({
+      'user_id': authUid,
+      'auth_uid': authUid,
+      'email': cleanEmail,
+      'name': name,
+      'avatar_url': '',
+      'created_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    return (uid: authUid, name: name, avatar: '');
+  }
+
+  String _authErrorMessage(String code) {
+    switch (code) {
+      case 'invalid-credential':
+      case 'wrong-password':
+      case 'user-not-found':
+        return 'Incorrect email or password.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'email-already-in-use':
+        return 'An account with this email already exists. Please sign in.';
+      case 'weak-password':
+        return 'Password must be at least 6 characters long.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a moment and try again.';
+      case 'network-request-failed':
+        return 'Could not reach the server. Check your connection and try again.';
+      default:
+        return 'Something went wrong ($code). Please try again.';
+    }
+  }
+
+  void _showAuthSnackbar(String title, String message, {bool isError = false}) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppTheme.surfaceDark,
+      colorText: isError ? AppTheme.accentOrange : AppTheme.textPrimary,
+      borderColor: AppTheme.borderDark,
+      borderWidth: 1,
+      margin: const EdgeInsets.all(16),
+    );
   }
 
   /// Sign Out and reset local state
-  Future<void> signOut() async {
+  Future<void> signOut({bool silent = false}) async {
+    try {
+      await fb.FirebaseAuth.instance.signOut();
+    } catch (e) {
+      debugPrint('[AuthController] Firebase sign-out note: $e');
+    }
     await _clearPersistedSession();
 
     isGuest.value = true;
@@ -304,6 +347,8 @@ class AuthController extends GetxController {
     if (Get.isRegistered<InquiryController>()) {
       await Get.find<InquiryController>().clearOnSignOut();
     }
+
+    if (silent) return;
 
     Get.snackbar(
       'Signed Out',

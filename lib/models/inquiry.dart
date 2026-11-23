@@ -1,3 +1,5 @@
+import '../core/pricing.dart';
+
 /// Represents the lifecycle status of a tire customer inquiry
 enum InquiryStatus {
   unpaid,
@@ -213,9 +215,19 @@ class TireInquiry {
     required this.updatedAt,
   });
 
-  double get tiresSubtotal => unitPrice * (isSetOfFour ? quantity * 4 : quantity);
-  double get totalPrice => tiresSubtotal + serviceFee;
   int get totalTiresCount => isSetOfFour ? quantity * 4 : quantity;
+
+  /// Price breakdown shared by every screen. Set-of-4 orders store the
+  /// discounted unit price, so the regular price is recovered from it.
+  TirePriceQuote get quote => TirePriceQuote.compute(
+        unitListPrice: isSetOfFour ? unitPrice / (1 - TirePriceQuote.setOfFourDiscountRate) : unitPrice,
+        tireCount: totalTiresCount,
+        isSetOfFour: isSetOfFour,
+        serviceFee: serviceFee,
+      );
+
+  double get tiresSubtotal => quote.discountedSubtotal;
+  double get totalPrice => quote.total;
 
   String get orderNumber {
     final cleanId = id.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
@@ -371,7 +383,7 @@ class TireInquiry {
   InquiryMessage? get latestMessage => effectiveMessages.isNotEmpty ? effectiveMessages.last : null;
 
   String get formattedTotalPrice {
-    final php = totalPrice.toInt();
+    final php = totalPrice.round();
     final formatted = php.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
@@ -380,7 +392,7 @@ class TireInquiry {
   }
 
   String get formattedSubtotal {
-    final php = tiresSubtotal.toInt();
+    final php = tiresSubtotal.round();
     final formatted = php.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
