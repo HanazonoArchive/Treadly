@@ -1339,7 +1339,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                       padding: EdgeInsets.symmetric(vertical: 20),
                       child: Center(
                         child: Text(
-                          'No completed sales yet',
+                          'No orders in this period',
                           style: TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 13,
@@ -1383,7 +1383,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${item['unitsSold']} units fitted  •  ₱${_formatAmount(item['revenue'] as double)}',
+                                          '${item['unitsSold']} units ordered  •  ₱${_formatAmount(item['revenue'] as double)}',
                                           style: const TextStyle(
                                             color: AppTheme.textSecondary,
                                             fontSize: 12,
