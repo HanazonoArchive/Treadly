@@ -29,7 +29,8 @@ void main() {
 
   setUp(() {
     ctrl = InquiryController();
-    ctrl.inquiries.assignAll([
+    ctrl.inquiries.clear();
+    ctrl.inquiries.addAll([
       _order('ORD-1', InquiryStatus.completed, qty: 2), // 2 x 10,000 + 150 = 20,150
       _order('ORD-2', InquiryStatus.unpaid, qty: 1),
       _order('ORD-3', InquiryStatus.submitted, set: true),
@@ -51,7 +52,8 @@ void main() {
   });
 
   test('no installed orders means zero revenue and zero average', () {
-    ctrl.inquiries.assignAll([_order('ORD-9', InquiryStatus.unpaid)]);
+    ctrl.inquiries.clear();
+    ctrl.inquiries.add(_order('ORD-9', InquiryStatus.unpaid));
     expect(ctrl.getTimeframeRevenue('All Time'), 0);
     expect(ctrl.getTimeframeAov('All Time'), 0);
   });
