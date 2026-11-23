@@ -654,13 +654,10 @@ class _InquiriesViewState extends State<InquiriesView> {
 
   Widget _buildPriceBreakdown(TireInquiry item) {
     final int count = item.totalTiresCount;
-    final double origUnit = item.isSetOfFour
-        ? (item.unitPrice / 0.90)
-        : item.unitPrice;
-    final double origTotal = origUnit * count;
-    final double discountAmount = item.isSetOfFour
-        ? (origTotal - item.tiresSubtotal)
-        : 0.0;
+    final quote = item.quote;
+    final double origUnit = quote.unitListPrice;
+    final double origTotal = quote.listSubtotal;
+    final double discountAmount = quote.discount;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

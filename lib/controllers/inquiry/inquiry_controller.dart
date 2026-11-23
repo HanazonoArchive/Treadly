@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/pricing.dart';
 import '../../models/inquiry.dart';
 import '../../models/shop_branch.dart';
 import '../../models/tire.dart';
@@ -634,21 +635,19 @@ class InquiryController extends GetxController {
     } catch (_) {}
 
     final inquiryId = 'ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-    final unitPrice = isSetOfFour ? tire.priceInPhp * 0.90 : tire.priceInPhp;
-    const double serviceFee = 150.0;
-
     final totalTires = isSetOfFour ? quantity * 4 : quantity;
-    final tiresSubtotal = unitPrice * totalTires;
-    final totalAmount = tiresSubtotal + serviceFee;
-    final php = totalAmount.toInt();
-    final formattedTotal = php.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
-    final formattedSubtotal = tiresSubtotal.toInt().toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
+    final quote = TirePriceQuote.compute(
+      unitListPrice: tire.priceInPhp,
+      tireCount: totalTires,
+      isSetOfFour: isSetOfFour,
+    );
+    // Stored per-tire price (discounted for sets) for backward compatibility.
+    final unitPrice = isSetOfFour
+        ? quote.unitListPrice * (1 - TirePriceQuote.setOfFourDiscountRate)
+        : quote.unitListPrice;
+    final double serviceFee = quote.serviceFee;
+    final formattedTotal = TirePriceQuote.format(quote.total);
+    final formattedSubtotal = TirePriceQuote.format(quote.discountedSubtotal);
 
     final startingBuffer = StringBuffer();
     startingBuffer.writeln('Treadly Order Details:');
@@ -658,9 +657,9 @@ class InquiryController extends GetxController {
         ? 'Set of 4 (${quantity * 4} pcs)'
         : '$quantity Tire${quantity > 1 ? 's' : ''}';
     startingBuffer.writeln('• Quantity: $qtyText');
-    startingBuffer.writeln('• Tires Subtotal: ₱$formattedSubtotal');
-    startingBuffer.writeln('• Platform Service Fee: ₱${serviceFee.toInt()}');
-    startingBuffer.writeln('• Total Amount: ₱$formattedTotal');
+    startingBuffer.writeln('• Tires Subtotal: $formattedSubtotal');
+    startingBuffer.writeln('• Platform Service Fee: ${TirePriceQuote.format(serviceFee)}');
+    startingBuffer.writeln('• Total Amount: $formattedTotal');
     startingBuffer.writeln('• Workshop: ${branch.name}');
     startingBuffer.writeln('• Bay Service: Drive-in Installation & Wheel Balancing');
     startingBuffer.writeln('• Status: Unpaid (Pending Payment)');

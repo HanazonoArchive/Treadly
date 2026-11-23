@@ -5,6 +5,7 @@ import '../controllers/auth_controller.dart';
 import '../controllers/inquiry/inquiry_controller.dart';
 import '../controllers/navigation_controller.dart';
 import '../core/app_theme.dart';
+import '../core/pricing.dart';
 import '../models/tire.dart';
 import '../services/navigation_service.dart';
 import 'auth/sign_in_view.dart';
@@ -60,7 +61,7 @@ class _ProductViewState extends State<ProductView> {
   }
 
   String _formatPrice(double amount) {
-    final php = amount.toInt();
+    final php = amount.round();
     final formatted = php.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
@@ -516,11 +517,16 @@ class _ProductViewState extends State<ProductView> {
     final notesController = TextEditingController();
 
     // Price calculations for the breakdown
-    const double serviceFee = 150.0;
     final int tireCount = _isSetOfFour ? _quantity * 4 : _quantity;
-    final double originalTotal = _tire.priceInPhp * tireCount;
-    final double discountAmount = _isSetOfFour ? (originalTotal * 0.10) : 0.0;
-    final double finalPrice = (originalTotal - discountAmount) + serviceFee;
+    final quote = TirePriceQuote.compute(
+      unitListPrice: _tire.priceInPhp,
+      tireCount: tireCount,
+      isSetOfFour: _isSetOfFour,
+    );
+    final double serviceFee = quote.serviceFee;
+    final double originalTotal = quote.listSubtotal;
+    final double discountAmount = quote.discount;
+    final double finalPrice = quote.total;
 
     showModalBottomSheet(
       context: context,

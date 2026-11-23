@@ -255,21 +255,25 @@ class SearchCatalogController extends GetxController {
       list = list.where((t) {
         final season = t.season.toLowerCase();
         final cat = t.category.toLowerCase();
+        // All-season and all-weather tires, plus non-summer touring tires.
+        // Summer tires are never listed as All-Season.
+        if (season.contains('summer')) return false;
         return season.contains('all') ||
             cat.contains('touring') ||
-            season.contains('summer') ||
             cat.contains('all-season');
       }).toList();
     } else if (selectedCategory.value == 'SUV & 4x4') {
       list = list.where((t) {
         final cat = t.category.toLowerCase();
         final full = t.fullName.toLowerCase();
+        // Match whole words only: a bare contains('at') used to catch names
+        // like "Cinturato" and "Marathon".
         return cat.contains('suv') ||
             cat.contains('terrain') ||
             cat.contains('4x4') ||
             cat.contains('truck') ||
-            full.contains('at') ||
-            full.contains('terrain');
+            full.contains('terrain') ||
+            RegExp(r'\b(suv|4x4|a/t|m/t)\b').hasMatch(full);
       }).toList();
     }
 

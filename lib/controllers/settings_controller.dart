@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -184,6 +185,13 @@ class SettingsController extends GetxController {
           .doc(auth.userId.value)
           .delete();
     } catch (_) {}
+
+    // Remove the login itself so the email can no longer sign in.
+    try {
+      await fb.FirebaseAuth.instance.currentUser?.delete();
+    } catch (e) {
+      debugPrint('[SettingsController] Auth account deletion note: $e');
+    }
 
     await auth.signOut();
     Get.until((route) => route.isFirst);
