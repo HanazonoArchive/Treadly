@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/app_theme.dart';
+import '../core/image_compressor.dart';
 import '../services/firebase_sync_service.dart';
 import 'auth_controller.dart';
 import '../core/toast.dart';
@@ -93,29 +94,33 @@ class SettingsController extends GetxController {
     showToast('Your profile picture has been updated.');
   }
 
-  /// Picks a photo from the gallery, uploads it to Cloudinary and uses it as
-  /// the profile picture.
+  /// Picks a photo, compresses it to a 512x512 JPEG, uploads it to Cloudinary
+  /// and uses it as the profile picture.
   Future<void> uploadAvatar() async {
     if (auth.isGuest.value) {
       Get.toNamed('/sign-in');
       return;
     }
 
+    // Large photos are scaled down here first so compression stays fast.
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 85,
+      maxWidth: 1600,
+      maxHeight: 1600,
     );
     if (picked == null) return;
 
     isUploadingAvatar.value = true;
     try {
-      final bytes = await picked.readAsBytes();
+      final compressed = await compressAvatar(await picked.readAsBytes());
+      if (compressed == null) {
+        showToast('That file is not a supported image.');
+        return;
+      }
       final response = await _cloudinary.uploadFile(
         CloudinaryFile.fromBytesData(
-          bytes,
-          identifier: picked.name.isNotEmpty ? picked.name : 'avatar.jpg',
+          compressed,
+          identifier: 'avatar.jpg',
           folder: 'treadly/avatars',
           resourceType: CloudinaryResourceType.Image,
         ),
