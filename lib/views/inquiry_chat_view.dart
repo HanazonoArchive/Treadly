@@ -7,6 +7,7 @@ import '../controllers/inquiry/inquiry_controller.dart';
 import '../core/app_theme.dart';
 import '../models/inquiry.dart';
 import 'inquiry_messenger_view.dart';
+import '../core/toast.dart';
 
 /// Chat screen for one order.
 /// A staff reply moves a Placed order to Confirmed; staff can also mark it
@@ -831,13 +832,7 @@ class _InquiryChatViewState extends State<InquiryChatView> {
                       onPressed: () {
                         controller.updateInquiryStatus(inq.id, InquiryStatus.responded);
                         Get.back();
-                        Get.snackbar(
-                          'Order Reopened',
-                          '#${inq.orderId} is now open in Confirmed state.',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: AppTheme.surfaceElevated,
-                          colorText: AppTheme.textPrimary,
-                        );
+                        showToast('#${inq.orderId} is now open in Confirmed state.');
                       },
                       child: const Text(
                         'Reopen',

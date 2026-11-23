@@ -6,6 +6,7 @@ import '../../controllers/auth_controller.dart';
 import '../../controllers/navigation_controller.dart';
 import '../../core/app_theme.dart';
 import '../../services/navigation_service.dart';
+import '../../core/toast.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -38,38 +39,17 @@ class _SignUpViewState extends State<SignUpView> {
     final confirm = _confirmPasswordController.text;
 
     if (email.isEmpty || password.isEmpty || confirm.isEmpty) {
-      Get.snackbar(
-        'Required Fields',
-        'Please complete all fields.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Please complete all fields.');
       return;
     }
 
     if (password != confirm) {
-      Get.snackbar(
-        'Password Mismatch',
-        'Passwords do not match. Please verify and try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Passwords do not match. Please verify and try again.');
       return;
     }
 
     if (password.length < 6) {
-      Get.snackbar(
-        'Weak Password',
-        'Password must be at least 6 characters long.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Password must be at least 6 characters long.');
       return;
     }
 

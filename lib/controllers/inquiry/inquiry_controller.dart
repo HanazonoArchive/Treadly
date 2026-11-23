@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/pricing.dart';
 import '../../core/shop.dart';
 import '../../models/inquiry.dart';
 import '../../models/tire.dart';
 import '../auth_controller.dart';
+import '../../core/toast.dart';
 
 /// Orders (inquiries), chat and analytics for both customers and staff.
 class InquiryController extends GetxController {
@@ -954,15 +954,7 @@ class InquiryController extends GetxController {
   Future<void> cancelInquiry(String inquiryId) async {
     final inq = inquiries.firstWhereOrNull((i) => i.id == inquiryId);
     if (inq != null && inq.status == InquiryStatus.completed) {
-      Get.snackbar(
-        'Action Prohibited',
-        'Completed inquiries cannot be cancelled.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.textPrimary,
-        borderColor: AppTheme.borderDark,
-        borderWidth: 1,
-      );
+      showToast('Completed inquiries cannot be cancelled.');
       return;
     }
     await updateInquiryStatus(inquiryId, InquiryStatus.cancelled);

@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/app_theme.dart';
 import '../services/firebase_sync_service.dart';
 import 'inquiry/inquiry_controller.dart';
 import 'sync_controller.dart';
+import '../core/toast.dart';
 
 /// Sign-in state (guest or signed in). Passwords are checked by Firebase
 /// Authentication; profiles live in the Firestore users collection and the
@@ -189,16 +189,16 @@ class AuthController extends GetxController {
       }
 
       isLoading.value = false;
-      _showAuthSnackbar('Welcome Back', 'Signed in as ${displayName.value}');
+      showToast('Signed in as ${displayName.value}');
       return true;
     } on fb.FirebaseAuthException catch (e) {
       isLoading.value = false;
-      _showAuthSnackbar('Sign In Failed', _authErrorMessage(e.code), isError: true);
+      showToast(_authErrorMessage(e.code));
       return false;
     } catch (e) {
       debugPrint('[AuthController] Sign-in error: $e');
       isLoading.value = false;
-      _showAuthSnackbar('Sign In Failed', 'Could not reach the server. Check your connection and try again.', isError: true);
+      showToast('Could not reach the server. Check your connection and try again.');
       return false;
     }
   }
@@ -209,11 +209,7 @@ class AuthController extends GetxController {
     final cleanEmail = email.trim().toLowerCase();
 
     if (cleanEmail.endsWith('@treadly.com')) {
-      _showAuthSnackbar(
-        'Staff Account',
-        'Staff accounts are created by the shop administrator. Please sign in instead.',
-        isError: true,
-      );
+      showToast('Staff accounts are created by the shop administrator. Please sign in instead.');
       return false;
     }
 
@@ -233,16 +229,16 @@ class AuthController extends GetxController {
       );
 
       isLoading.value = false;
-      _showAuthSnackbar('Account Created', 'Welcome to Treadly, ${displayName.value}!');
+      showToast('Welcome to Treadly, ${displayName.value}!');
       return true;
     } on fb.FirebaseAuthException catch (e) {
       isLoading.value = false;
-      _showAuthSnackbar('Sign Up Failed', _authErrorMessage(e.code), isError: true);
+      showToast(_authErrorMessage(e.code));
       return false;
     } catch (e) {
       debugPrint('[AuthController] Sign-up error: $e');
       isLoading.value = false;
-      _showAuthSnackbar('Sign Up Failed', 'Could not reach the server. Check your connection and try again.', isError: true);
+      showToast('Could not reach the server. Check your connection and try again.');
       return false;
     }
   }
@@ -302,18 +298,6 @@ class AuthController extends GetxController {
     }
   }
 
-  void _showAuthSnackbar(String title, String message, {bool isError = false}) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppTheme.surfaceDark,
-      colorText: isError ? AppTheme.accentOrange : AppTheme.textPrimary,
-      borderColor: AppTheme.borderDark,
-      borderWidth: 1,
-      margin: const EdgeInsets.all(16),
-    );
-  }
 
   /// Signs out and clears local data.
   Future<void> signOut({bool silent = false}) async {
@@ -340,15 +324,6 @@ class AuthController extends GetxController {
 
     if (silent) return;
 
-    Get.snackbar(
-      'Signed Out',
-      'You are now browsing as Guest',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppTheme.surfaceDark,
-      colorText: AppTheme.textPrimary,
-      borderColor: AppTheme.borderDark,
-      borderWidth: 1,
-      margin: const EdgeInsets.all(16),
-    );
+    showToast('You are now browsing as Guest');
   }
 }

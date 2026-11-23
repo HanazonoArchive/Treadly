@@ -9,6 +9,7 @@ import '../core/pricing.dart';
 import '../models/tire.dart';
 import '../services/navigation_service.dart';
 import 'auth/sign_in_view.dart';
+import '../core/toast.dart';
 
 /// Product details: specs, compatible vehicles, Single/Set of 4 and ordering.
 class ProductView extends StatefulWidget {
@@ -267,14 +268,7 @@ class _ProductViewState extends State<ProductView> {
                           child: GestureDetector(
                             onTap: _tire.stock < 4
                                 ? () {
-                                    Get.snackbar(
-                                      'Insufficient Stock',
-                                      'Only ${_tire.stock} units available for ${_tire.fullName}. Minimum 4 required for a set.',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                      backgroundColor: AppTheme.surfaceDark,
-                                      colorText: AppTheme.accentOrange,
-                                      margin: const EdgeInsets.all(16),
-                                    );
+                                    showToast('Only ${_tire.stock} units available for ${_tire.fullName}. Minimum 4 required for a set.');
                                   }
                                 : () => setState(() => _isSetOfFour = true),
                             child: Opacity(
@@ -470,14 +464,7 @@ class _ProductViewState extends State<ProductView> {
                             final auth = Get.find<AuthController>();
                             if (auth.isGuest.value || auth.userId.value.isEmpty) {
                               Get.to(() => const SignInView());
-                              Get.snackbar(
-                                'Sign In Required',
-                                'Please sign in to your account to inquire about this tire.',
-                                snackPosition: SnackPosition.BOTTOM,
-                                backgroundColor: AppTheme.surfaceDark,
-                                colorText: AppTheme.accentOrange,
-                                margin: const EdgeInsets.all(16),
-                              );
+                              showToast('Please sign in to place an order.');
                               return;
                             }
                           }
@@ -786,14 +773,7 @@ class _ProductViewState extends State<ProductView> {
                         if (auth.isGuest.value || auth.userId.value.isEmpty) {
                           Navigator.pop(ctx);
                           Get.to(() => const SignInView());
-                          Get.snackbar(
-                            'Sign In Required',
-                            'Please sign in to submit your inquiry.',
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: AppTheme.surfaceDark,
-                            colorText: AppTheme.accentOrange,
-                            margin: const EdgeInsets.all(16),
-                          );
+                          showToast('Please sign in to place an order.');
                           return;
                         }
                       }

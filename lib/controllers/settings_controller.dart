@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../core/app_theme.dart';
 import '../services/firebase_sync_service.dart';
 import 'auth_controller.dart';
+import '../core/toast.dart';
 
 /// Settings: display name, avatar and account deletion.
 class SettingsController extends GetxController {
@@ -35,27 +36,13 @@ class SettingsController extends GetxController {
   Future<void> updateName() async {
     if (auth.isGuest.value) {
       Get.toNamed('/sign-in');
-      Get.snackbar(
-        'Sign In Required',
-        'Please sign in to update your profile.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Please sign in to update your profile.');
       return;
     }
 
     final newName = nameInputController.text.trim();
     if (newName.isEmpty) {
-      Get.snackbar(
-        'Invalid Name',
-        'Name cannot be empty.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Name cannot be empty.');
       return;
     }
 
@@ -70,29 +57,11 @@ class SettingsController extends GetxController {
 
       auth.displayName.value = newName;
 
-      Get.snackbar(
-        'Saved',
-        'Profile name updated to $newName',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.textPrimary,
-        borderColor: AppTheme.borderDark,
-        borderWidth: 1,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Profile name updated to $newName');
     } catch (_) {
       // Offline fallback: still update locally
       auth.displayName.value = newName;
-      Get.snackbar(
-        'Saved Locally',
-        'Name updated locally.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.textPrimary,
-        borderColor: AppTheme.borderDark,
-        borderWidth: 1,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Name updated locally.');
     } finally {
       isSavingName.value = false;
     }
@@ -115,29 +84,13 @@ class SettingsController extends GetxController {
     } catch (_) {}
 
     Get.back(); // Close avatar sheet if open
-    Get.snackbar(
-      'Avatar Updated',
-      'Your profile picture has been updated.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppTheme.surfaceDark,
-      colorText: AppTheme.textPrimary,
-      borderColor: AppTheme.borderDark,
-      borderWidth: 1,
-      margin: const EdgeInsets.all(16),
-    );
+    showToast('Your profile picture has been updated.');
   }
 
   /// Asks for confirmation, then deletes the account.
   void promptAccountTermination() {
     if (auth.isGuest.value) {
-      Get.snackbar(
-        'Guest Session',
-        'You are currently browsing as a guest. There is no registered account to delete.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('You are currently browsing as a guest. There is no registered account to delete.');
       return;
     }
 
@@ -193,14 +146,7 @@ class SettingsController extends GetxController {
     await auth.signOut();
     Get.until((route) => route.isFirst);
 
-    Get.snackbar(
-      'Account Terminated',
-      'Your account and data have been removed.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppTheme.surfaceDark,
-      colorText: Colors.redAccent,
-      margin: const EdgeInsets.all(16),
-    );
+    showToast('Your account and data have been removed.');
   }
 
   @override

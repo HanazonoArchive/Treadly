@@ -7,6 +7,7 @@ import '../../controllers/navigation_controller.dart';
 import '../../core/app_theme.dart';
 import '../../services/navigation_service.dart';
 import 'sign_up_view.dart';
+import '../../core/toast.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -34,14 +35,7 @@ class _SignInViewState extends State<SignInView> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      Get.snackbar(
-        'Required Fields',
-        'Please enter both email and password.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppTheme.surfaceDark,
-        colorText: AppTheme.accentOrange,
-        margin: const EdgeInsets.all(16),
-      );
+      showToast('Please enter both email and password.');
       return;
     }
 

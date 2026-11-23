@@ -10,6 +10,7 @@ import '../../core/app_theme.dart';
 import '../../models/inquiry.dart';
 import '../../models/tire.dart';
 import '../inquiry_chat_view.dart';
+import '../../core/toast.dart';
 
 class ShopDashboardView extends StatefulWidget {
   const ShopDashboardView({super.key});
@@ -539,13 +540,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
               ),
               onPressed: () {
                 controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
-                Get.snackbar(
-                  'Order Cancelled',
-                  '#${inq.orderId} cancelled.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppTheme.surfaceElevated,
-                  colorText: AppTheme.statusCancelled,
-                );
+                showToast('#${inq.orderId} cancelled.');
               },
               child: const Text(
                 'Cancel',
@@ -591,13 +586,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
               ),
               onPressed: () {
                 controller.updateInquiryStatus(inq.id, InquiryStatus.cancelled);
-                Get.snackbar(
-                  'Order Declined',
-                  '#${inq.orderId} marked as unavailable.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppTheme.surfaceElevated,
-                  colorText: AppTheme.statusCancelled,
-                );
+                showToast('#${inq.orderId} marked as unavailable.');
               },
               child: const Text(
                 'Decline',
@@ -639,13 +628,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
               ),
               onPressed: () {
                 controller.updateInquiryStatus(inq.id, InquiryStatus.responded);
-                Get.snackbar(
-                  'Order Confirmed',
-                  '#${inq.orderId} confirmed and queued for bay.',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: AppTheme.surfaceElevated,
-                  colorText: AppTheme.statusResponded,
-                );
+                showToast('#${inq.orderId} confirmed and queued for bay.');
               },
               child: const Text(
                 'Confirm Order',
@@ -1472,14 +1455,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                       timeframe: _analyticsTimeframe,
                     );
                     Clipboard.setData(ClipboardData(text: csv));
-                    Get.snackbar(
-                      'CSV Export Copied',
-                      'Dataset copied to clipboard. Ready to paste into Excel or Google Sheets.',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppTheme.surfaceDark,
-                      colorText: AppTheme.textPrimary,
-                      duration: const Duration(seconds: 3),
-                    );
+                    showToast('CSV copied to clipboard');
                   },
                 ),
                 const Divider(color: AppTheme.borderDark, height: 20),
@@ -1507,14 +1483,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                       timeframe: _analyticsTimeframe,
                     );
                     Clipboard.setData(ClipboardData(text: summary));
-                    Get.snackbar(
-                      'Executive Summary Copied',
-                      'Summary copied to clipboard. Ready to paste.',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppTheme.surfaceDark,
-                      colorText: AppTheme.textPrimary,
-                      duration: const Duration(seconds: 3),
-                    );
+                    showToast('Summary copied to clipboard');
                   },
                 ),
                 const SizedBox(height: 10),
@@ -1850,17 +1819,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                             auth.updateDisplayName(newName);
                           }
                           Get.back();
-                          Get.snackbar(
-                            'Settings Saved',
-                            'Staff name updated to "$newName"',
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: AppTheme.surfaceElevated,
-                            colorText: AppTheme.textPrimary,
-                            icon: const Icon(
-                              LucideIcons.checkCheck,
-                              color: AppTheme.accentOrange,
-                            ),
-                          );
+                          showToast('Staff name updated to "$newName"');
                         },
                         child: const Text(
                           'Save Changes',
@@ -2349,17 +2308,7 @@ class _ShopDashboardViewState extends State<ShopDashboardView>
                               Navigator.of(ctx).pop();
                               await homeCtrl.updateTire(updatedTire);
 
-                              Get.snackbar(
-                                'Inventory Updated',
-                                '${updatedTire.fullName} updated ($stock in stock)',
-                                snackPosition: SnackPosition.BOTTOM,
-                                backgroundColor: AppTheme.surfaceElevated,
-                                colorText: AppTheme.textPrimary,
-                                icon: const Icon(
-                                  LucideIcons.checkCheck,
-                                  color: AppTheme.accentOrange,
-                                ),
-                              );
+                              showToast('${updatedTire.fullName} updated ($stock in stock)');
                             },
                             child: const Text(
                               'Save Changes',
