@@ -30,8 +30,8 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB1mPzwhK80kSYSTsOuv_HaQfTMMFRD56Q',
-    appId: '1:574972738156:web:ac945a1294a12bbd4c7649',
+    apiKey: 'AIzaSyDR7D6EwKmsr4x1-VuLquOGAylLB5JbRak',
+    appId: '1:574972738156:android:f1321023d24b4b174c7649',
     messagingSenderId: '574972738156',
     projectId: 'treadly-9dd72',
     storageBucket: 'treadly-9dd72.firebasestorage.app',

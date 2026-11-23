@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "574972738156",
+    "project_id": "treadly-9dd72",
+    "storage_bucket": "treadly-9dd72.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574972738156:android:f1321023d24b4b174c7649",
+        "android_client_info": {
+          "package_name": "hanazono.cce.treadly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDR7D6EwKmsr4x1-VuLquOGAylLB5JbRak"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
