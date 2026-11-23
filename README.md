@@ -15,6 +15,7 @@ Built for CCE106/L (Applications Development and Emerging Technologies).
 - Payment by GCash, Maya, card or at the counter
 - Order tracking: Unpaid, Placed, Confirmed, Installed (or Cancelled)
 - A chat thread for every order
+- Profile photo upload (cropped to a 512x512 square on the phone, stored on Cloudinary)
 
 **Staff (Treadly Desk, for accounts with an `@treadly.com` email)**
 - Live orders: confirm, decline, chat, mark as installed
@@ -28,6 +29,7 @@ Built for CCE106/L (Applications Development and Emerging Technologies).
 - Firebase Authentication (email and password)
 - Cloud Firestore for tires, orders, chats and profiles
 - SharedPreferences for the cached session
+- Cloudinary for profile photos (unsigned upload preset)
 - DevicePreview for testing phone layouts on web
 
 ## Getting started
@@ -52,6 +54,7 @@ flutter test
 - `test/pricing_test.dart` covers order pricing
 - `test/app_logic_test.dart` covers order statuses, staff detection, search and the category filters
 - `test/catalog_search_test.dart` checks the catalog data
+- `test/image_compressor_test.dart` checks that profile photos come out as 512x512 squares
 
 ## Project layout
 
