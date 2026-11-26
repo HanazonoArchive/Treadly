@@ -2,16 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../models/tire.dart';
+import '../../services/exchange_rate_service.dart';
 import '../../services/tire_repository.dart';
 import '../../widgets/search/tire_sizing_studio_sheet.dart';
 
-enum SortOption {
-  relevance,
-  latest,
-  topSales,
-  priceHighToLow,
-  priceLowToHigh,
-}
+enum SortOption { relevance, latest, topSales, priceHighToLow, priceLowToHigh }
 
 extension SortOptionExt on SortOption {
   String get label {
@@ -69,9 +64,9 @@ class SearchCatalogController extends GetxController {
     '245/40 R18',
     'Bridgestone Potenza',
     'Pirelli P Zero',
-    'Continental Extreme Contact',
+    'Continental ExtremeContact',
     'Summer tires',
-    'Run-Flat',
+    'All-Terrain',
     'Set of 4',
   ];
 
@@ -135,8 +130,11 @@ class SearchCatalogController extends GetxController {
   Future<void> loadTires() async {
     isLoading.value = true;
     try {
-      final loadedTires = await TireRepository.instance.fetchTires();
-      allTires.assignAll(loadedTires);
+      final results = await Future.wait([
+        TireRepository.instance.fetchTires(),
+        ExchangeRateService.instance.ensureLoaded(),
+      ]);
+      allTires.assignAll(results[0] as List<Tire>);
     } catch (e) {
       debugPrint('[SearchCatalogController] Error loading tires: $e');
     } finally {
@@ -145,7 +143,11 @@ class SearchCatalogController extends GetxController {
   }
 
   /// Used by the Home search bar and category shortcuts.
-  void applyExternalSearch({String query = '', String category = 'All', bool openFilter = false}) {
+  void applyExternalSearch({
+    String query = '',
+    String category = 'All',
+    bool openFilter = false,
+  }) {
     final trimmedQuery = query.trim();
     searchQuery.value = trimmedQuery;
     textController.text = trimmedQuery;
@@ -164,7 +166,6 @@ class SearchCatalogController extends GetxController {
     }
   }
 
-  /// Clears the search text and optionally resets the category filter to 'All'
   void clearSearchQuery({bool resetCategory = false}) {
     searchQuery.value = '';
     textController.clear();
@@ -186,7 +187,6 @@ class SearchCatalogController extends GetxController {
     sortOption.value = option;
   }
 
-  /// Cycles to the next sort option.
   void toggleSortOrder() {
     final nextIndex = (sortOption.value.index + 1) % SortOption.values.length;
     sortOption.value = SortOption.values[nextIndex];
@@ -213,30 +213,42 @@ class SearchCatalogController extends GetxController {
       inStockOnly.value ||
       sortOption.value != SortOption.relevance;
 
-  /// Filtered and sorted catalog.
+  static String _normalizeSearchText(String text) {
+    return text.toLowerCase().replaceAll(RegExp(r'[\s\-./]+'), '');
+  }
+
   List<Tire> get searchResults {
     var list = allTires.toList();
 
-    // Text search
+    // Text search (supports both spaced and unspaced forms like "ExtremeContact" / "Extreme Contact" or "225/45R18" / "225/45 R18")
     if (searchQuery.isNotEmpty) {
       final q = searchQuery.value.toLowerCase();
+      final qNorm = _normalizeSearchText(searchQuery.value);
       list = list.where((t) {
-        final matchesCars = t.compatibleCars != null &&
-            t.compatibleCars!.any((c) => c.toLowerCase().contains(q));
+        final matchesCars =
+            t.compatibleCars != null &&
+            t.compatibleCars!.any(
+              (c) =>
+                  c.toLowerCase().contains(q) ||
+                  (qNorm.isNotEmpty && _normalizeSearchText(c).contains(qNorm)),
+            );
         return t.fullName.toLowerCase().contains(q) ||
             t.size.toLowerCase().contains(q) ||
             t.brand.toLowerCase().contains(q) ||
             t.category.toLowerCase().contains(q) ||
+            t.season.toLowerCase().contains(q) ||
+            (qNorm.isNotEmpty &&
+                (_normalizeSearchText(t.fullName).contains(qNorm) ||
+                    _normalizeSearchText(t.size).contains(qNorm) ||
+                    _normalizeSearchText(t.category).contains(qNorm))) ||
             matchesCars;
       }).toList();
     }
 
-    // In-stock only
     if (inStockOnly.value) {
       list = list.where((t) => !t.isOutOfStock).toList();
     }
 
-    // Category chips
     if (selectedCategory.value == 'Set of 4') {
       list = list.where((t) => t.stock >= 4).toList();
     } else if (selectedCategory.value == 'Performance') {
@@ -254,8 +266,6 @@ class SearchCatalogController extends GetxController {
       list = list.where((t) {
         final season = t.season.toLowerCase();
         final cat = t.category.toLowerCase();
-        // All-season and all-weather tires, plus non-summer touring tires.
-        // Summer tires are never listed as All-Season.
         if (season.contains('summer')) return false;
         return season.contains('all') ||
             cat.contains('touring') ||
@@ -265,8 +275,6 @@ class SearchCatalogController extends GetxController {
       list = list.where((t) {
         final cat = t.category.toLowerCase();
         final full = t.fullName.toLowerCase();
-        // Match whole words only: a bare contains('at') used to catch names
-        // like "Cinturato" and "Marathon".
         return cat.contains('suv') ||
             cat.contains('terrain') ||
             cat.contains('4x4') ||
@@ -276,7 +284,6 @@ class SearchCatalogController extends GetxController {
       }).toList();
     }
 
-    // Sizing Studio filters
     if (selectedWidth.value != null) {
       list = list.where((t) => t.width == selectedWidth.value).toList();
     }
@@ -287,10 +294,8 @@ class SearchCatalogController extends GetxController {
       list = list.where((t) => t.rimSize == selectedRim.value).toList();
     }
 
-    // Sort
     switch (sortOption.value) {
       case SortOption.relevance:
-        // Keep catalog order
         break;
       case SortOption.latest:
         list.sort((a, b) {
@@ -315,7 +320,6 @@ class SearchCatalogController extends GetxController {
     return list;
   }
 
-  /// Opens the Tire Sizing Studio.
   void openFilterSheet() {
     Get.bottomSheet(
       const TireSizingStudioSheet(),

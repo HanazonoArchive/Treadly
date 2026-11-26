@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
-/// Small helper used on sign-in and sign-out.
 class SyncController extends GetxController {
   final RxBool isSyncing = false.obs;
 
@@ -9,7 +8,6 @@ class SyncController extends GetxController {
     if (userId.isEmpty) return;
     isSyncing.value = true;
     try {
-      // Profile and orders are loaded by AuthController and InquiryController.
       debugPrint('[SyncController] Synced session for user: $userId');
     } catch (e) {
       debugPrint('[SyncController] Sync error: $e');

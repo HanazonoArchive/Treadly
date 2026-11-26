@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../services/exchange_rate_service.dart';
+
 /// A tire in the catalog.
 class Tire {
   final String id;
@@ -52,41 +54,146 @@ class Tire {
     required this.imageAsset,
   });
 
+  /// ISO / ETRTO load index to single-tire max load capacity (kg).
+  static const Map<int, int> loadIndexToKg = {
+    70: 335,
+    71: 345,
+    72: 355,
+    73: 365,
+    74: 375,
+    75: 387,
+    76: 400,
+    77: 412,
+    78: 425,
+    79: 437,
+    80: 450,
+    81: 462,
+    82: 475,
+    83: 487,
+    84: 500,
+    85: 515,
+    86: 530,
+    87: 545,
+    88: 560,
+    89: 580,
+    90: 600,
+    91: 615,
+    92: 630,
+    93: 650,
+    94: 670,
+    95: 690,
+    96: 710,
+    97: 730,
+    98: 750,
+    99: 775,
+    100: 800,
+    101: 825,
+    102: 850,
+    103: 875,
+    104: 900,
+    105: 925,
+    106: 950,
+    107: 975,
+    108: 1000,
+    109: 1030,
+    110: 1060,
+    111: 1090,
+    112: 1120,
+    113: 1150,
+    114: 1180,
+    115: 1215,
+    116: 1250,
+    117: 1285,
+    118: 1320,
+    119: 1360,
+    120: 1400,
+    121: 1450,
+    122: 1500,
+    123: 1550,
+    124: 1600,
+    125: 1650,
+    126: 1700,
+  };
+
+  /// ISO / ETRTO speed symbol to maximum rated speed.
+  static const Map<String, String> speedRatingToKmh = {
+    'N': '140 km/h',
+    'P': '150 km/h',
+    'Q': '160 km/h',
+    'R': '170 km/h',
+    'S': '180 km/h',
+    'T': '190 km/h',
+    'U': '200 km/h',
+    'H': '210 km/h',
+    'V': '240 km/h',
+    'ZR': '240+ km/h',
+    'W': '270 km/h',
+    'Y': '300 km/h',
+    '(Y)': '300+ km/h',
+  };
+
   /// Size, e.g. "225/45 R18".
   String get size => '$width/$aspectRatio R$rimSize';
 
   String get fullName => '$brand $model';
 
-  /// Price in pesos. Prices under 1000 are stored in USD and converted at 56.
-  double get priceInPhp => price < 1000 ? (price * 56.0).roundToDouble() : price;
+  /// Accurate load index label, e.g. "115 (1,215 kg)".
+  String get loadIndexFormatted {
+    final idx = loadIndex ?? 95;
+    final kg = loadIndexToKg[idx];
+    if (kg == null) return '$idx';
+    return '$idx (${_formatWithCommas(kg)} kg)';
+  }
+
+  /// Accurate speed rating label, e.g. "Y (300 km/h)".
+  String get speedRatingFormatted {
+    final code = (speedRating ?? 'Y').trim().toUpperCase();
+    final kmh = speedRatingToKmh[code];
+    return kmh != null ? '$code ($kmh)' : code;
+  }
+
+  /// Treadwear warranty display string.
+  String get warrantyFormatted {
+    if (warrantyMiles == null || warrantyMiles! <= 0) {
+      return 'Manufacturer Warranty';
+    }
+    return '${_formatWithCommas(warrantyMiles!)} mi';
+  }
+
+  static String _formatWithCommas(int number) {
+    return number.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
+
+  /// Price in pesos. Prices under 1000 are stored in USD and converted using
+  /// the live USD/PHP exchange rate from [ExchangeRateService].
+  double get priceInPhp => price < 1000
+      ? (price * ExchangeRateService.instance.rate).roundToDouble()
+      : price;
 
   /// Crossed-out price: original_price if higher than the selling price,
   /// otherwise selling price + 10%.
   double? get originalPriceInPhp {
     if (originalPrice != null && originalPrice! > price) {
-      return originalPrice! < 1000 ? (originalPrice! * 56.0).roundToDouble() : originalPrice!;
+      return originalPrice! < 1000
+          ? (originalPrice! * ExchangeRateService.instance.rate).roundToDouble()
+          : originalPrice!;
     }
     return (priceInPhp * 1.10).roundToDouble();
   }
 
-  /// e.g. "Est. ₱12,320"
+  /// e.g. "Est. ₱14,013"
   String get formattedPrice {
     final php = priceInPhp.toInt();
-    final formatted = php.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
-    return 'Est. ₱$formatted';
+    return 'Est. ₱${_formatWithCommas(php)}';
   }
 
-  /// e.g. "₱12,320"
+  /// e.g. "₱14,013"
   String get rawFormattedPrice {
     final php = priceInPhp.toInt();
-    final formatted = php.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
-    return '₱$formatted';
+    return '₱${_formatWithCommas(php)}';
   }
 
   /// No longer used.
@@ -148,28 +255,36 @@ class Tire {
     );
   }
 
-  /// Splits old run-together model names into words.
+  /// Normalizes legacy spaced model variants back to official trademark spellings.
   static String normalizeModelName(String rawModel) {
     const Map<String, String> map = {
-      'CrossContact LX25': 'Cross Contact LX25',
-      'ExtremeContact DWS06 Plus': 'Extreme Contact DWS06 Plus',
-      'ExtremeContact Sport 02': 'Extreme Contact Sport 02',
-      'SportContact 7': 'Sport Contact 7',
-      'UltraContact UC7': 'Ultra Contact UC7',
-      'TerrainContact A/T': 'Terrain Contact A/T',
-      'VikingContact 7': 'Viking Contact 7',
-      'CrossClimate 2 SUV': 'Cross Climate 2 SUV',
-      'e.Primacy Electric Drive': 'e-Primacy Electric Drive',
-      'e.Primacy': 'e-Primacy',
+      'Cross Contact LX25': 'CrossContact LX25',
+      'Cross Contact AX6': 'CrossContact AX6',
+      'Extreme Contact DWS06 Plus': 'ExtremeContact DWS06 Plus',
+      'Extreme Contact Sport 02': 'ExtremeContact Sport 02',
+      'Extreme Contact Force': 'ExtremeContact Force',
+      'Sport Contact 7': 'SportContact 7',
+      'Premium Contact 7': 'PremiumContact 7',
+      'Comfort Contact CC7': 'ComfortContact CC7',
+      'Ultra Contact UC7': 'UltraContact UC7',
+      'Terrain Contact A/T': 'TerrainContact A/T',
+      'Viking Contact 7': 'VikingContact 7',
+      'Van Contact Ultra': 'VanContact Ultra',
+      'Cross Climate 2 SUV': 'CrossClimate 2 SUV',
+      'e-Primacy Electric Drive': 'e.Primacy',
+      'e.Primacy Electric Drive': 'e.Primacy',
+      'e-Primacy': 'e.Primacy',
     };
-    return map[rawModel.trim()] ?? rawModel;
+    final trimmed = rawModel.trim();
+    return map[trimmed] ?? trimmed;
   }
 
   factory Tire.fromJson(Map<String, dynamic> json) {
+    final model = normalizeModelName(json['model'] as String? ?? '');
     return Tire(
       id: json['id'] as String? ?? '',
-      brand: json['brand'] as String? ?? '',
-      model: normalizeModelName(json['model'] as String? ?? ''),
+      brand: (json['brand'] as String? ?? '').trim(),
+      model: model,
       category: json['category'] as String? ?? '',
       season: json['season'] as String? ?? '',
       width: (json['width'] as num?)?.toInt() ?? 225,
@@ -194,7 +309,7 @@ class Tire {
       imageAsset: resolveImageAsset(
         explicit: json['image_asset'] as String?,
         brand: json['brand'] as String?,
-        model: json['model'] as String?,
+        model: model,
       ),
     );
   }
@@ -267,10 +382,11 @@ class Tire {
       } catch (_) {}
     }
 
+    final model = normalizeModelName(map['model'] as String? ?? '');
     return Tire(
       id: map['id'] as String? ?? '',
-      brand: map['brand'] as String? ?? '',
-      model: map['model'] as String? ?? '',
+      brand: (map['brand'] as String? ?? '').trim(),
+      model: model,
       category: map['category'] as String? ?? '',
       season: map['season'] as String? ?? 'All-Season',
       width: (map['width'] as num?)?.toInt() ?? 225,
@@ -293,7 +409,7 @@ class Tire {
       imageAsset: resolveImageAsset(
         explicit: map['image_asset'] as String?,
         brand: map['brand'] as String?,
-        model: map['model'] as String?,
+        model: model,
       ),
     );
   }
@@ -306,66 +422,19 @@ class Tire {
   /// Picks the image in assets/images/tires/ that matches the brand and model.
   static String resolveImageAsset({String? explicit, String? brand, String? model}) {
     if (explicit != null && explicit.isNotEmpty) return explicit;
-    final b = (brand ?? '').toLowerCase();
-    final m = (model ?? '').toLowerCase();
-
-    if (b.contains('michelin')) {
-      if (m.contains('cup 2') || m.contains('cup2')) {
-        return 'assets/images/tires/michelin_pilot_sport_cup_2.webp';
-      }
-      if (m.contains('all season') || m.contains('as4') || m.contains('as 4')) {
-        return 'assets/images/tires/michelin_pilot_sport_all_season_4.webp';
-      }
-      if (m.contains('crossclimate 2') || m.contains('crossclimate2')) {
-        return 'assets/images/tires/michelin_crossclimate_2_suv.webp';
-      }
-      if (m.contains('crossclimate')) {
-        return 'assets/images/tires/michelin_crossclimate_suv.webp';
-      }
-      if (m.contains('e.primacy') || m.contains('e primacy') || m.contains('eprimacy')) {
-        return 'assets/images/tires/michelin_e_primacy.webp';
-      }
-      if (m.contains('primacy 4+') || m.contains('primacy 4 plus')) {
-        return 'assets/images/tires/michelin_primacy_4_plus.webp';
-      }
-      if (m.contains('primacy')) {
-        return 'assets/images/tires/michelin_primacy4.webp';
-      }
-      return 'assets/images/tires/michelin_pilot_sport_5.webp';
-    }
-    if (b.contains('continental')) {
-      if (m.contains('sportcontact 7') || m.contains('sc7') || m.contains('sport contact 7')) {
-        return 'assets/images/tires/continental_sportcontact_7.webp';
-      }
-      if (m.contains('dws06') || m.contains('extremecontact dws')) {
-        return 'assets/images/tires/continental_extremecontact_dws06_plus.webp';
-      }
-      if (m.contains('sport 02') || m.contains('extremecontact sport')) {
-        return 'assets/images/tires/continental_extremecontact_sport_02.webp';
-      }
-      if (m.contains('crosscontact') || m.contains('lx25')) {
-        return 'assets/images/tires/continental_crosscontact_lx25.webp';
-      }
-      if (m.contains('terraincontact') || m.contains('terrain contact')) {
-        return 'assets/images/tires/continental_terraincontact_at.webp';
-      }
-      if (m.contains('ultracontact') || m.contains('uc7') || m.contains('ultra contact')) {
-        return 'assets/images/tires/continental_ultracontact_uc7.webp';
-      }
-      if (m.contains('vikingcontact') || m.contains('viking contact')) {
-        return 'assets/images/tires/continental_vikingcontact_7.webp';
-      }
-      return 'assets/images/tires/continental_sportcontact_7.webp';
-    }
-    if (b.contains('goodyear')) {
-      if (m.contains('asymmetric 6') || m.contains('asym 6') || m.contains('asymmetric')) {
-        return 'assets/images/tires/goodyear_eagle_f1_asymmetric_6.webp';
-      }
-      return 'assets/images/tires/goodyear_eagle_f1.png';
-    }
-    if (b.contains('pirelli')) {
-      return 'assets/images/tires/pirelli_p_zero_pz4.webp';
+    final bSlug = _toSlug(brand ?? '');
+    final mSlug = _toSlug(model ?? '');
+    if (bSlug.isNotEmpty && mSlug.isNotEmpty) {
+      return 'assets/images/tires/${bSlug}_$mSlug.webp';
     }
     return 'assets/images/tires/michelin_pilot_sport_5.webp';
+  }
+
+  static String _toSlug(String input) {
+    return input
+        .toLowerCase()
+        .replaceAll('+', ' plus')
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
   }
 }

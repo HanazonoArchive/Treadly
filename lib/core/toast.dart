@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-/// Short message at the bottom of the screen.
 void showToast(String message) {
   Get.rawSnackbar(
     messageText: Text(

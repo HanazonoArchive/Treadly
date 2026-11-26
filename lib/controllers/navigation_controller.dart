@@ -8,7 +8,6 @@ class NavigationController extends GetxController {
 
   void changeTab(int index) {
     if (index != 1) {
-      // Leaving Search clears the query and category.
       if (Get.isRegistered<SearchCatalogController>()) {
         Get.find<SearchCatalogController>().clearSearchQuery(resetCategory: true);
       }

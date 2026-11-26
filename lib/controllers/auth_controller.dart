@@ -11,9 +11,6 @@ import 'inquiry/inquiry_controller.dart';
 import 'sync_controller.dart';
 import '../core/toast.dart';
 
-/// Sign-in state (guest or signed in). Passwords are checked by Firebase
-/// Authentication; profiles live in the Firestore users collection and the
-/// session is cached in SharedPreferences.
 class AuthController extends GetxController {
   final RxBool isGuest = true.obs;
   final RxString displayName = 'Guest'.obs;
@@ -22,7 +19,6 @@ class AuthController extends GetxController {
   final RxString avatarUrl = ''.obs;
   final RxBool isLoading = false.obs;
 
-  /// Staff accounts use an @treadly.com email.
   bool get isStaff => userEmail.value.trim().toLowerCase().endsWith('@treadly.com');
 
   @override
@@ -54,9 +50,6 @@ class AuthController extends GetxController {
     }
   }
 
-  /// A cached session is only trusted if Firebase Authentication still has a
-  /// signed-in user with the same email. Otherwise (signed out elsewhere,
-  /// account deleted, or edited local storage) the app falls back to Guest.
   Future<void> _verifyRestoredSession(String savedEmail) async {
     try {
       final user = await fb.FirebaseAuth.instance
@@ -68,7 +61,7 @@ class AuthController extends GetxController {
         await signOut(silent: true);
       }
     } on TimeoutException {
-      // Auth state not known yet (slow start); keep the cached session.
+
     } catch (e) {
       debugPrint('[AuthController] Session verification note: $e');
     }
@@ -107,7 +100,6 @@ class AuthController extends GetxController {
     );
   }
 
-  /// Saves a new display name locally and to Firestore.
   Future<void> updateDisplayName(String newName) async {
     final trimmed = newName.trim();
     if (trimmed.isEmpty) return;
@@ -159,7 +151,7 @@ class AuthController extends GetxController {
     } catch (_) {}
   }
 
-  /// Signs in with Firebase Authentication, then loads the Firestore profile.
+  /// Signs in with Firebase Authentication
   Future<bool> signIn({required String email, required String password}) async {
     isLoading.value = true;
     final cleanEmail = email.trim().toLowerCase();
@@ -203,8 +195,7 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Creates a Firebase Authentication account. @treadly.com (staff)
-  /// accounts are created by the admin in the Firebase console instead.
+  /// Creates a Firebase Authentication account
   Future<bool> signUp({required String email, required String password}) async {
     final cleanEmail = email.trim().toLowerCase();
 
@@ -243,8 +234,6 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Finds the profile for this email or creates one. Accounts from before
-  /// Firebase Auth keep their old user_id so their orders stay linked.
   Future<({String uid, String name, String avatar})> _loadOrCreateProfile(
     String cleanEmail,
     String authUid,
@@ -298,8 +287,6 @@ class AuthController extends GetxController {
     }
   }
 
-
-  /// Signs out and clears local data.
   Future<void> signOut({bool silent = false}) async {
     try {
       await fb.FirebaseAuth.instance.signOut();

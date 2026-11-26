@@ -8,6 +8,7 @@ import 'controllers/search/search_controller.dart';
 import 'controllers/sync_controller.dart';
 import 'core/app_theme.dart';
 import 'core/firebase_options.dart';
+import 'services/exchange_rate_service.dart';
 import 'views/auth/sign_in_view.dart';
 import 'views/auth/sign_up_view.dart';
 import 'views/home_view.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
   }
 
   // Controllers used from the first frame
+  ExchangeRateService.instance.ensureLoaded();
   Get.put(SyncController(), permanent: true);
   Get.put(AuthController(), permanent: true);
   Get.put(SearchCatalogController(), permanent: true);

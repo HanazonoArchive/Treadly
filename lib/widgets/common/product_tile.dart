@@ -119,13 +119,15 @@ class ProductTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(
-                    tire.formattedPrice,
-                    style: const TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.textPrimary,
+                  Obx(
+                    () => Text(
+                      tire.formattedPrice,
+                      style: const TextStyle(
+                        fontFamily: 'Outfit',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),

@@ -11,7 +11,6 @@ import '../services/firebase_sync_service.dart';
 import 'auth_controller.dart';
 import '../core/toast.dart';
 
-/// Settings: display name, avatar and account deletion.
 class SettingsController extends GetxController {
   final AuthController auth = Get.find<AuthController>();
 
@@ -20,7 +19,7 @@ class SettingsController extends GetxController {
   final RxBool isSavingName = false.obs;
   final RxBool isUploadingAvatar = false.obs;
 
-  // Unsigned upload preset; uploads go to the treadly/avatars folder.
+  /// Cloudinary
   final CloudinaryPublic _cloudinary = CloudinaryPublic('pcfavaxs', 'cce106', cache: false);
 
   // Preset avatars
@@ -90,19 +89,17 @@ class SettingsController extends GetxController {
       );
     } catch (_) {}
 
-    Get.back(); // Close avatar sheet if open
+    Get.back();
     showToast('Your profile picture has been updated.');
   }
 
-  /// Picks a photo, compresses it to a 512x512 JPEG, uploads it to Cloudinary
-  /// and uses it as the profile picture.
+  // Profile Image Compression Algorithm and Upload
   Future<void> uploadAvatar() async {
     if (auth.isGuest.value) {
       Get.toNamed('/sign-in');
       return;
     }
 
-    // Large photos are scaled down here first so compression stays fast.
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 1600,
@@ -135,7 +132,6 @@ class SettingsController extends GetxController {
     }
   }
 
-  /// Asks for confirmation, then deletes the account.
   void promptAccountTermination() {
     if (auth.isGuest.value) {
       showToast('You are currently browsing as a guest. There is no registered account to delete.');
@@ -184,7 +180,6 @@ class SettingsController extends GetxController {
           .delete();
     } catch (_) {}
 
-    // Remove the login itself so the email can no longer sign in.
     try {
       await fb.FirebaseAuth.instance.currentUser?.delete();
     } catch (e) {

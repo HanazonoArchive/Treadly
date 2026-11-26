@@ -22,10 +22,19 @@ class TireRepository {
       debugPrint('[TireRepository] Error loading fallback tires JSON: $e');
     }
 
-    // Firestore is missing tires from the bundled catalog: upload them
-    // in the background and use the bundled list for now.
-    if (fallbackList.isNotEmpty && tires.length < fallbackList.length) {
-      debugPrint('[TireRepository] Expanded catalog detected (${fallbackList.length} tires vs ${tires.length} in Firestore). Syncing to Firestore...');
+    // Firestore is missing tires from the bundled catalog or has stale assets/names:
+    // upload the updated catalog in the background and use the bundled list now.
+    final bundledById = {for (final t in fallbackList) t.id: t};
+    final hasStaleAssets = tires.any((t) {
+      final bundled = bundledById[t.id];
+      if (bundled == null) return true;
+      return bundled.imageAsset != t.imageAsset || bundled.model != t.model;
+    });
+    if (fallbackList.isNotEmpty &&
+        (tires.length < fallbackList.length || hasStaleAssets)) {
+      debugPrint(
+        '[TireRepository] Updated catalog detected (${fallbackList.length} bundled vs ${tires.length} in Firestore). Syncing to Firestore...',
+      );
       FirebaseSyncService.instance.syncTires(fallbackList);
       return fallbackList;
     }
@@ -76,6 +85,9 @@ class TireRepository {
       'pirelli-pzero-235-35-19',
       'goodyear-asym6-225-40-18',
       'bridgestone-re71rs-255-40-18',
+      'michelin-e-primacy-electric-drive',
+      'goodyear-eagle-f1-asymmetric-5-suv',
+      'hankook-ion-evo-electric',
     };
 
     final Map<String, Tire> uniqueTires = {};

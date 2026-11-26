@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../models/tire.dart';
+import '../../services/exchange_rate_service.dart';
 import '../../services/tire_repository.dart';
 
 /// Home tab data: best sellers and product grid.
@@ -31,7 +32,11 @@ class HomeController extends GetxController {
   Future<void> loadTires() async {
     isLoading.value = true;
     try {
-      final loadedTires = await TireRepository.instance.fetchTires();
+      final results = await Future.wait([
+        TireRepository.instance.fetchTires(),
+        ExchangeRateService.instance.ensureLoaded(),
+      ]);
+      final loadedTires = results[0] as List<Tire>;
       tires.assignAll(loadedTires);
 
       // Best sellers: most reviews first, rating breaks ties.

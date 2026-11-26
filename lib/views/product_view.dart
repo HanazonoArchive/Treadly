@@ -197,13 +197,15 @@ class _ProductViewState extends State<ProductView> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(
-                        _tire.formattedPrice,
-                        style: const TextStyle(
-                          fontFamily: 'Outfit',
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.textPrimary,
+                      Obx(
+                        () => Text(
+                          _tire.formattedPrice,
+                          style: const TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.textPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -338,11 +340,13 @@ class _ProductViewState extends State<ProductView> {
                     mainAxisSpacing: 10,
                     children: [
                       _buildSpecItem('Size Dimension', _tire.size),
-                      _buildSpecItem('Speed Rating', _tire.speedRating ?? 'Y (300 km/h)'),
-                      _buildSpecItem('Load Index', '${_tire.loadIndex ?? 95} (690 kg)'),
+                      _buildSpecItem('Speed Rating', _tire.speedRatingFormatted),
+                      _buildSpecItem('Load Index', _tire.loadIndexFormatted),
                       _buildSpecItem('Noise Level', '${_tire.noiseDb ?? 68} dB'),
                       _buildSpecItem('Wet Grip', 'Class ${_tire.wetGrip ?? 'A'}'),
-                      _buildSpecItem('DOT Production', '${_tire.dotYear ?? 2024}'),
+                      _buildSpecItem('Fuel Efficiency', 'Class ${_tire.fuelEfficiency ?? 'B'}'),
+                      _buildSpecItem('Treadwear Warranty', _tire.warrantyFormatted),
+                      _buildSpecItem('DOT Production', '${_tire.dotYear ?? 2025}'),
                     ],
                   ),
                   const SizedBox(height: 24),
